@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# GitHub's regular Git file size limit
+LIMIT=$((100 * 1024 * 1024))
+
+echo "Checking staged files for large files..."
+
+while IFS= read -r -d '' FILE; do
+
+    # Skip deleted files
+    [[ -f "$FILE" ]] || continue
+
+    # Get file size in bytes
+    SIZE=$(wc -c < "$FILE" | tr -d '[:space:]')
+
+    if (( SIZE > LIMIT )); then
+
+        # Check whether Git LFS already tracks this file
+        if ! git check-attr filter -- "$FILE" | grep -q 'filter: lfs$'; then
+
+            echo "Large file detected: $FILE"
+            echo "Size: $((SIZE / 1024 / 1024)) MB"
+
+            # Automatically add the file to Git LFS
+            git lfs track --filename "$FILE"
+
+            # Stage the LFS configuration
+            git add -- .gitattributes
+
+            # Re-stage the file using the LFS filter
+            git add -- "$FILE"
+
+            echo "Added to Git LFS: $FILE"
+
+        fi
+
+    fi
+
+done < <(git diff --cached --name-only --diff-filter=ACMR -z)
+
+echo "Large file check completed."
