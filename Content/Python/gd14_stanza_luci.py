@@ -622,8 +622,45 @@ def costruisci():
     costruisci_prop()
     costruisci_luci()
     costruisci_telecamere()
+    _aggiungi_giocatore()
     livelli.save_current_level()
     log("fatto: %d attori. Livello salvato." % len(_creati))
+
+
+# Punto in cui compare Bot2 quando si preme Play (vicino alla porta,
+# rivolto verso la finestra).
+PARTENZA_GIOCATORE = (560.0, 330.0, 100.0)
+PARTENZA_YAW = 180.0
+
+
+def _aggiungi_giocatore():
+    """PlayerStart + GameMode del progetto: con Play si gira nella stanza con Bot2."""
+    import aiv_livelli
+    aiv_livelli.rendi_giocabile(PARTENZA_GIOCATORE, PARTENZA_YAW)
+
+
+def rendi_giocabile():
+    """Rende giocabile il livello GIA' ESISTENTE, senza ricostruirlo:
+    le modifiche fatte a mano restano. Da lanciare una volta sola con
+        import gd14_stanza_luci; gd14_stanza_luci.rendi_giocabile()"""
+    if not livelli.load_level(LIVELLO):
+        avviso("non riesco ad aprire " + LIVELLO)
+        return
+    for att in attori.get_all_level_actors():
+        if isinstance(att, unreal.PlayerStart):
+            avviso("c'è già un PlayerStart: aggiorno solo la GameMode")
+            import aiv_livelli
+            gm = aiv_livelli.classe_cpp("PlatformerGameMode")
+            mondo = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).get_editor_world()
+            try:
+                mondo.get_world_settings().set_editor_property("default_game_mode", gm)
+            except Exception:  # noqa: BLE001
+                avviso("imposta a mano: World Settings > GameMode Override = PlatformerGameMode")
+            livelli.save_current_level()
+            return
+    _aggiungi_giocatore()
+    livelli.save_current_level()
+    log("stanza resa giocabile con Bot2")
 
 
 if __name__ == "__main__":

@@ -93,6 +93,20 @@ Lo script è stato scritto senza poterlo eseguire in Unreal, quindi alcune cose 
 3. **Esposizione.** Con Lumen e l'esposizione automatica l'interno può sembrare più scuro o più chiaro del previsto: regola `auto_exposure_bias` nel Post Process o l'intensità del sole.
 4. **Nomi degli asset.** Se nella Output Log compare `asset mancante`, il percorso di quell'asset nel tuo progetto è diverso: correggilo nella costante corrispondente.
 
+## Giocare nella stanza con Bot2
+
+Lo script ora aggiunge anche un **PlayerStart** vicino alla porta e imposta nei World Settings la GameMode `PlatformerGameMode` (classe C++ del progetto, vedi `Docs/GD13_platformer.md`), che usa **BP_Bot2** come personaggio. Quindi, dopo averlo generato, basta premere **Play** e si cammina nella stanza con Bot2.
+
+- Il progetto va **compilato** prima, altrimenti la GameMode C++ non esiste (lo script lo segnala nella Output Log e chiede di impostarla a mano).
+- Se hai già il livello `L_GD14_StanzaLuci` e lo hai modificato a mano, **non rilanciare** `costruisci()` (lo ricrea da zero). Nel Python della Output Log scrivi invece:
+
+  ```python
+  import gd14_stanza_luci; gd14_stanza_luci.rendi_giocabile()
+  ```
+
+  Apre il livello, aggiunge il PlayerStart solo se manca, imposta la GameMode e salva, senza toccare il resto.
+- Il punto di partenza è `PARTENZA_GIOCATORE` (e `PARTENZA_YAW`) in cima allo script, oppure si sposta il PlayerStart nell'editor.
+
 ## Gli screenshot
 
 Nel livello ci sono tre CineCamera, nella cartella `Telecamere`:
