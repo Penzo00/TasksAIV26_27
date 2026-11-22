@@ -1,63 +1,93 @@
 # TasksAIV26_27
 
-Repo of the tasks given by AIV.
+Repository for the tasks given by AIV.
 
-## Pushing the Unreal Engine project to GitHub
+## General-purpose GitHub publishing (Git + Git LFS)
 
-This repository uses Git and Git LFS to version the Unreal Engine project. Unreal assets such as `.uasset` and `.umap` files can be large, so large files should be stored with Git LFS rather than as ordinary Git blobs.
+Use [`push-to-github.sh`](./push-to-github.sh) to publish this repository from Git Bash. It is designed for mixed-language projects, including Python, C#, C/C++, Unreal Engine, machine-learning models, and scientific datasets.
 
-GitHub limits a single Git push to 2 GiB. This repository includes a helper script, `push-unreal-to-github.sh`, which checks the outgoing Git pack and migrates sufficiently large files in unpublished commits to Git LFS before pushing. The script aims to keep the ordinary Git pack below **1.8 GiB**, leaving some headroom below GitHub's limit.
+The script keeps source code and ordinary text files in Git. It migrates common large/binary formats and any other files above a configurable size into Git LFS. Supported examples include:
 
-> **Important:** The script estimates the Git pack size; it cannot guarantee that every push will succeed. Git LFS storage and bandwidth limits are separate from Git's push-size limit.
+- Machine-learning models and checkpoints: `.onnx`, `.pt`, `.pth`, `.ckpt`, `.safetensors`, `.pb`, `.tflite`, `.h5`, `.hdf5`, `.keras`, `.gguf`.
+- NumPy and scientific data: `.npz`, `.npy`, `.mat`.
+- Tabular / columnar data: `.parquet`, `.feather`, `.arrow`.
+- Unreal Engine assets: `.uasset`, `.umap`, `.ubulk`, `.uexp`, `.uptnl`.
+- Any other file larger than the default `50MB` threshold, regardless of extension.
 
-### 1. Requirements
+The extension-based formats above are migrated to LFS even when smaller than 50 MB. Other formats are selected by file size. When a matching file type is migrated, Git LFS records the corresponding tracking rule in `.gitattributes`; future additions of that type will then be filtered through LFS automatically.
 
-Before using the script, install and configure:
+### Important GitHub limits (GitHub Pro)
 
-- **Git for Windows**, including **Git Bash**.
-- **Git LFS**. Install it using the official instructions: <https://git-lfs.com/>.
-- Access to this GitHub repository and permission to push to the target branch.
+GitHub Pro does **not** remove the ordinary Git push-size limit:
 
-Check that Git and Git LFS are available from Git Bash:
+- A single Git push is limited to **2 GiB**. The script targets **1.8 GiB** per push to leave a margin.
+- A normal Git file is rejected above **100 MiB**. The script migrates files above 50 MB to LFS, before attempting the push.
+- Git LFS individual-file limit on GitHub Pro is **2 GB**. A single ONNX, NPZ, or other file above that limit cannot be uploaded to LFS; split it into shards or store it in an artifact/object-storage service instead.
+- GitHub Pro currently includes **10 GiB of LFS storage** and **10 GiB of monthly LFS download bandwidth**. This is the same included LFS allowance as GitHub Free. Revisions of an LFS file each consume storage; downloads consume bandwidth. The script cannot query the account's remaining quota or billing budget.
+
+Check your current usage in GitHub **Settings → Billing and licensing → Metered usage** (menu wording may vary).
+
+### 1. Prerequisites
+
+Install:
+
+1. Git for Windows (including Git Bash), or Git on macOS/Linux.
+2. Git LFS: <https://git-lfs.com/>.
+3. Authentication and write access to the GitHub repository.
+
+Verify the tools from Git Bash:
 
 ```bash
 git --version
 git lfs version
 ```
 
-Initialize Git LFS for your account (normally this is a one-time setup on each computer):
+Initialize Git LFS once per computer/user account:
 
 ```bash
 git lfs install
 ```
 
-### 2. Prepare the repository before running the script
+### 2. Prepare the repository
 
-1. **Open Git Bash in the repository root** — the directory containing `AIV_UE5Intro.uproject` and `.git`.
-2. **Make sure the correct branch is checked out.** For this repository, the branch is normally `main`:
+1. Put `push-to-github.sh` in the repository root, next to this README.
+2. Open Git Bash in the repository root.
+3. Check the current branch and remote:
 
    ```bash
-   git switch main
    git status -sb
    git branch -vv
-   ```
-
-3. **Check the remote and upstream branch.** The script expects the current local branch to track a branch that already exists on the remote (for example, `main` tracking `origin/main`):
-
-   ```bash
    git remote -v
-   git fetch origin
+   git fetch --all --prune
    ```
 
-   In `git branch -vv`, look for `[origin/main]` next to `main`. If the remote branch exists but the local branch has no upstream configured, set it with:
+4. Make sure the current branch tracks the branch you intend to update. If it already tracks (for example) `origin/main`, the script uses that upstream. If there is no upstream, it defaults to `origin/<current-branch>` and can create that remote branch on the first push.
+5. Review `.gitignore`. It should exclude local caches, generated build folders, virtual environments, temporary files, and credentials. Do **not** ignore useful source, model, dataset, configuration, or project assets just because they are large. For example:
 
-   ```bash
-   git branch --set-upstream-to=origin/main main
+   ```gitignore
+   # Python local environment/cache
+   .venv/
+   __pycache__/
+   *.py[cod]
+   .ipynb_checkpoints/
+
+   # .NET / Visual Studio generated output
+   bin/
+   obj/
+   .vs/
+
+   # C/C++ generated build output (adapt to your project)
+   build/
+   cmake-build-*/
+
+   # General local noise
+   .DS_Store
+   *.log
    ```
 
-   Do not run that command if `origin/main` does not exist. The helper script is intended for an existing remote-tracking branch, not the first-ever push to an empty remote repository.
+   Add or remove ignore rules according to what must be shared. For example, do not ignore `models/`, `data/`, `Content/`, `.onnx`, or `.npz` if those files are project deliverables you want in version control.
 
-4. **Review what Git sees before allowing the script to commit.**
+6. Inspect the changes before letting the script commit them:
 
    ```bash
    git status --short
@@ -65,92 +95,79 @@ git lfs install
    git diff --cached
    ```
 
-   The script offers to run `git add -A` and commit **all non-ignored changes**. That includes modified, deleted, and untracked files. Before answering `y`, make sure the listed changes are supposed to be part of the repository. Move private files out of the repository or add appropriate ignore rules for local-only files, credentials, generated data, and temporary files.
+The script asks before staging and committing **all non-ignored changes**. This includes untracked files, modifications, and deletions. Review the list carefully; never include passwords, API keys, private datasets, or files you do not have rights to redistribute.
 
-5. **Check `.gitignore`.** Keep generated Unreal folders out of Git, such as `Binaries/`, `Intermediate/`, `Saved/`, and `DerivedDataCache/`. Do not ignore the entire `Content/` directory or all `.uasset`/`.umap` files: those are often the actual project assets that need to be versioned. Use Git LFS for large assets instead.
+### 3. Run the publishing script
 
-6. **Make a backup if the work is important.** The script creates a local backup branch before rewriting unpublished commits, but keeping a separate copy of important work is still recommended.
-
-### 3. Put the helper script in the repository
-
-Copy `push-unreal-to-github.sh` into the root of the repository, next to the `.uproject` file:
-
-```text
-TasksAIV26_27/
-├── .git/
-├── .gitignore
-├── .gitattributes
-├── AIV_UE5Intro.uproject
-├── Content/
-├── Plugins/
-├── Source/                 (if the project contains C++ code)
-└── push-unreal-to-github.sh
-```
-
-If the script was downloaded to another folder, copy it into this directory first.
-
-### 4. Run the script
-
-In Git Bash, change to the repository directory. For example:
+From the repository root in Git Bash:
 
 ```bash
-cd "/d/Unreal Projects/TasksAIV26_27"
+bash ./push-to-github.sh
 ```
-
-Run:
-
-```bash
-bash ./push-unreal-to-github.sh
-```
-
-Using `bash` explicitly means you do not need to set the executable bit on Windows.
 
 The script will:
 
-1. Check that Git LFS is installed, that you are on a branch with an upstream, and that no merge/rebase or unresolved conflict is in progress.
-2. Fetch the latest remote references and stop if the remote branch has commits that are not in your local branch, or if the branches have diverged. Resolve/synchronize the branch manually before trying again.
-3. Show the working-tree changes and ask whether it may stage and commit all of them. It asks for a commit message; pressing Enter uses the default `Update Unreal project`.
-4. Create a local recovery branch named similar to `backup/main-before-lfs-YYYYMMDD-HHMMSS`.
-5. Inspect and migrate files in unpublished commits to Git LFS. It first migrates files larger than 1 MB. If the outgoing Git pack is still above the safety target, it progressively tries 100 KB and then 10 KB.
-6. Estimate the outgoing ordinary Git pack. If it cannot get the estimate below 1.8 GiB, it stops without pushing.
-7. Ask for confirmation, upload the required Git LFS objects, and then push the current branch to its configured remote branch.
+1. Check the repository, branch, remote, Git LFS installation, and any in-progress merge/rebase.
+2. Fetch remote references and stop if the remote branch has diverged or contains commits not present locally. It never force-pushes.
+3. Ask whether to stage and commit all non-ignored working-tree changes.
+4. Create a local recovery branch before rewriting any unpublished commit history.
+5. Migrate the listed ML/scientific/Unreal file formats to LFS, regardless of size.
+6. Migrate all other files larger than `50MB` to LFS.
+7. Apply existing `.gitattributes` LFS rules to unpublished commits where a file was committed as a normal Git blob by mistake.
+8. Estimate the outgoing ordinary Git pack. If the complete push is too large, it attempts to divide a linear first-parent history into multiple fast-forward pushes, each below 1.8 GiB.
+9. Upload LFS objects, then push the Git branch. It asks for confirmation before uploading.
 
-The migration is based on **file size, not file type**. If the script has to lower the threshold, more files can be moved into Git LFS. Review the migration output and the updated `.gitattributes` file.
+Git LFS migration rewrites commit IDs in the unpublished portion of the current branch. The script does not use `--everything`, does not rewrite commits already present on a remote, and keeps the pre-migration branch locally as a recovery point.
 
-### 5. After the push
+### 4. Configure the LFS size threshold
 
-When the script reports that the push completed:
+The default threshold for file types not listed above is 50 MB. You can use a lower threshold when a push still contains too much ordinary Git data:
 
-1. Check the repository page on GitHub and confirm that the latest commit is present.
-2. Keep the printed `backup/...` branch until you have verified the project on GitHub and, ideally, tested a fresh clone with Git LFS enabled.
-3. Once everything is verified, you may remove the local backup branch using the exact name printed by the script:
+```bash
+LFS_THRESHOLD=10MB bash ./push-to-github.sh
+```
 
-   ```bash
-   git branch -d "backup/main-before-lfs-YYYYMMDD-HHMMSS"
-   ```
+For example, set `LFS_THRESHOLD=10MB` to migrate any other file larger than 10 MB. This can increase LFS storage usage, so do not lower it unnecessarily.
 
-   Replace the example name with the actual backup branch name. The backup branch is local; the script does not push it.
+You can also set a custom commit message:
 
-For a fresh clone, install Git LFS first and then download the LFS content:
+```bash
+COMMIT_MESSAGE="Add inference model and dataset" bash ./push-to-github.sh
+```
+
+### 5. What the script cannot do
+
+- It cannot increase GitHub's 2 GiB per-push limit or Git LFS quota.
+- It cannot upload a single Git LFS file above the GitHub Pro 2 GB per-file limit.
+- It does not automatically split one enormous commit if that single commit alone still exceeds the safe push size. It stops before pushing and tells you to lower `LFS_THRESHOLD` or split the commit manually.
+- Automatic multi-push batching is only used when checkpoints can be pushed as a fast-forward along the local first-parent chain. If the branch has a more complex merge shape, the script stops rather than risk a non-fast-forward update.
+- It cannot determine whether a file is semantically useful. `.gitignore` defines what is excluded; the script asks before adding all remaining changes.
+- It cannot read your account's current Git LFS storage/bandwidth usage. Check GitHub billing settings regularly.
+
+For very large training datasets or model archives that are frequently replaced, consider dedicated artifact/object storage rather than keeping every version in Git LFS.
+
+### 6. After a successful push
+
+Check the GitHub repository and keep the local `backup/...-before-lfs-...` branch until you have verified the latest commit and tested a fresh clone. A fresh clone should retrieve LFS content with:
 
 ```bash
 git lfs install
 git lfs pull
 ```
 
-### 6. If the script stops or the push fails
+After confirming that the remote repository and a fresh checkout are correct, you may delete the local backup branch using its exact name:
 
-- **No upstream branch:** Confirm that the corresponding branch exists on GitHub, fetch it, and configure the upstream as described in section 2.
-- **Remote branch has new commits or has diverged:** Do not force-push. Fetch and integrate the remote changes (for example, using a reviewed `git pull --rebase`), resolve any conflicts, and run the script again.
-- **The estimated Git pack remains above 1.8 GiB:** The script stops rather than trying a push that may exceed GitHub's limit. Keep the local backup branch. Review the largest files and consider splitting the unpublished work into smaller commits or deciding which additional file types should be stored in LFS.
-- **Git LFS upload fails:** Check your network connection, GitHub authentication, and the repository's Git LFS storage/bandwidth quota. Re-running the script after fixing the issue is generally safe; the Git branch is only pushed after the LFS upload step succeeds.
-- **The normal Git push fails after LFS upload:** The LFS objects may already have uploaded, but the branch may not have updated. Check `git status -sb` and the GitHub branch before retrying. Do not force-push unless the repository maintainers have explicitly agreed to a history rewrite.
+```bash
+git branch -d "backup/main-before-lfs-YYYYMMDD-HHMMSS"
+```
 
-The script does not delete project assets or remove the backup branch automatically. It also does not bypass GitHub's Git LFS quota or change the remote repository's history.
+Replace the example branch name with the one printed by the script.
 
 ### References
 
+- [GitHub: GitHub repository limits](https://docs.github.com/en/repositories/creating-and-managing-repositories/repository-limits)
 - [GitHub: Troubleshooting the 2 GiB push limit](https://docs.github.com/en/get-started/using-git/troubleshooting-the-2-gb-push-limit)
-- [GitHub: Configuring Git Large File Storage](https://docs.github.com/en/repositories/working-with-files/managing-large-files/configuring-git-large-file-storage)
+- [GitHub: About Git Large File Storage](https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-git-large-file-storage)
+- [GitHub: Git LFS billing and included usage](https://docs.github.com/en/billing/concepts/product-billing/git-lfs)
 - [Git LFS: `git lfs migrate` documentation](https://github.com/git-lfs/git-lfs/blob/main/docs/man/git-lfs-migrate.adoc)
 - [Git LFS official website](https://git-lfs.com/)
