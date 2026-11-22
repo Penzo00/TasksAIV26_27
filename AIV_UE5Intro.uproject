@@ -3,6 +3,13 @@
 	"EngineAssociation": "{72D008E0-4675-9E9C-421E-91A479CFB5E5}",
 	"Category": "",
 	"Description": "",
+	"Modules": [
+		{
+			"Name": "AIV_UE5Intro",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	],
 	"Plugins": [
 		{
 			"Name": "ModelingToolsEditorMode",
