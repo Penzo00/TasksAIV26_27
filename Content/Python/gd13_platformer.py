@@ -468,9 +468,8 @@ def livello_3():
 
 def costruisci_tutto():
     M.update(mat.tutti())
-    livello_1()
-    livello_2()
-    livello_3()
+    for costruisci_livello in (livello_1, livello_2, livello_3):
+        a.sicuro(costruisci_livello)
     a.log("Fatto. Apri L_GD13_Livello1 e premi Play.")
 
 

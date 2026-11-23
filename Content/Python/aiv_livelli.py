@@ -101,15 +101,47 @@ def nomina(attore, nome, cartella):
 
 
 def nuovo_livello(percorso):
-    """Crea un livello vuoto in percorso, cancellando quello vecchio se c'è."""
-    if unreal.EditorAssetLibrary.does_asset_exist(percorso):
-        if not unreal.EditorAssetLibrary.delete_asset(percorso):
-            avviso("non riesco a cancellare %s: se è aperto, apri un altro livello e rilancia." % percorso)
+    """Crea un livello vuoto in percorso. Il livello vecchio NON viene
+    cancellato: viene rinominato in <nome>_Backup (quello di prima ancora
+    viene sostituito). Se qualcosa va storto, il backup resta lì."""
+    eal = unreal.EditorAssetLibrary
+    # prima si apre una mappa vuota e temporanea: il livello da sostituire
+    # non deve essere aperto mentre lo si rinomina
+    try:
+        unreal.EditorLoadingAndSavingUtils.new_blank_map(False)
+    except Exception as e:  # noqa: BLE001
+        avviso("non riesco ad aprire una mappa vuota: %s" % e)
+    backup = percorso + "_Backup"
+    if eal.does_asset_exist(percorso):
+        if eal.does_asset_exist(backup) and not eal.delete_asset(backup):
+            avviso("non riesco a togliere il vecchio backup %s: lo script si ferma qui." % backup)
             return False
+        if not eal.rename_asset(percorso, backup):
+            avviso("non riesco a mettere da parte %s: lo script si ferma qui, il livello è intatto." % percorso)
+            return False
+        log("il livello di prima ora è in " + backup)
     if not livelli.new_level(percorso):
         avviso("new_level ha fallito per " + percorso)
+        if eal.does_asset_exist(backup) and not eal.does_asset_exist(percorso):
+            eal.rename_asset(backup, percorso)
         return False
     return True
+
+
+def sicuro(funzione, *args, **kwargs):
+    """Esegue una funzione che costruisce un livello. Se si ferma per un
+    errore, scrive il motivo nel log e salva comunque quello che ha fatto."""
+    import traceback
+    try:
+        return funzione(*args, **kwargs)
+    except Exception:  # noqa: BLE001
+        unreal.log_error("[AIV] errore in %s:\n%s" % (funzione.__name__, traceback.format_exc()))
+        try:
+            salva()
+            avviso("salvato il livello incompleto; quello di prima è nel _Backup accanto")
+        except Exception:  # noqa: BLE001
+            pass
+        return None
 
 
 def mobile(attore):
@@ -475,4 +507,11 @@ def rendi_giocabile(pos_partenza, yaw_partenza=0.0):
 
 
 def salva():
+    """Salva il livello E i pacchetti degli attori: con "One File Per Actor"
+    (attivo di default nei livelli nuovi di UE5) ogni attore è un file a sé
+    in __ExternalActors__, e salvare solo la mappa li lascerebbe fuori."""
     livelli.save_current_level()
+    try:
+        unreal.EditorLoadingAndSavingUtils.save_dirty_packages(True, True)
+    except Exception as e:  # noqa: BLE001
+        avviso("salvataggio dei pacchetti: %s (usa File > Save All)" % e)

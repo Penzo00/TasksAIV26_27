@@ -681,22 +681,19 @@ def costruisci(blockout=False):
     if not a.nuovo_livello(percorso):
         return
     _creati.clear()
-    costruisci_involucro()
-    costruisci_travi()
-    costruisci_finestra_e_porta()
-    costruisci_camino()
-    costruisci_soggiorno()
-    costruisci_cucina()
-    costruisci_libreria()
-    costruisci_esterno()
+    # ogni parte è "al sicuro": se una si ferma per un errore (scritto nel
+    # log), le altre vengono costruite lo stesso e il livello viene salvato
+    for parte in (costruisci_involucro, costruisci_travi, costruisci_finestra_e_porta, costruisci_camino,
+                  costruisci_soggiorno, costruisci_cucina, costruisci_libreria, costruisci_esterno):
+        a.sicuro(parte)
     if blockout:
         # nel blockout bastano una luce per il fuoco e il cielo, per leggere i volumi
         a.luce_esterna(sole_pitch=LUNA_PITCH, sole_yaw=LUNA_YAW, sole_lux=4.0)
         a.luce_punto("Fuoco_Blockout", (LUNGO - 65, LARGO / 2.0, 55), intensita=FUOCO_CD, temperatura=FUOCO_K,
                      raggio=1500.0)
     else:
-        costruisci_luci()
-    costruisci_telecamere()
+        a.sicuro(costruisci_luci)
+    a.sicuro(costruisci_telecamere)
     a.rendi_giocabile(PARTENZA_GIOCATORE, PARTENZA_YAW)
     a.salva()
     log("fatto: %d oggetti. Livello salvato." % len(_creati))
