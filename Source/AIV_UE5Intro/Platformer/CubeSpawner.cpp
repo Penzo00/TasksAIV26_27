@@ -74,7 +74,7 @@ void ACubeSpawner::SpawnCubes()
 				continue;
 			}
 
-			for (int32 Layer = 0; Layer < Layers; ++Layer)
+			for (int32 Layer = 0; Layer < CubeLayers; ++Layer)
 			{
 				const FVector Location = Hit.ImpactPoint + FVector(0.f, 0.f, CubeSize * (0.5f + Layer) + 1.f);
 				FActorSpawnParameters SpawnParams;

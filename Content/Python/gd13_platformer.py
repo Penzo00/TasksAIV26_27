@@ -187,7 +187,7 @@ def livello_1():
                 blades_collide=False, tower_material=M["IntonacoChiaro"], blade_material=M["LegnoChiaro"])
 
     # casse fisiche: spawn con due cicli for e un trace verso il basso
-    a.spawn_cpp("CubeSpawner", "Casse_Fisiche", "Arredo", (250, 550, 300), rows=3, columns=3, layers=2,
+    a.spawn_cpp("CubeSpawner", "Casse_Fisiche", "Arredo", (250, 550, 300), rows=3, columns=3, cube_layers=2,
                 cube_size=60.0, spacing=66.0, simulate_physics=True, cube_mass=6.0,
                 materials=[M["LegnoChiaro"], M["LegnoScuro"]])
 

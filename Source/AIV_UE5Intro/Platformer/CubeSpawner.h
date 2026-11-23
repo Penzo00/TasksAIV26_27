@@ -44,7 +44,7 @@ public:
 
 	/** Quanti cubi uno sopra l'altro in ogni cella. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawner", meta = (ClampMin = "1", ClampMax = "10"))
-	int32 Layers = 1;
+	int32 CubeLayers = 1;
 
 	/** Lato di un cubo (cm). */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawner", meta = (ClampMin = "10.0"))
