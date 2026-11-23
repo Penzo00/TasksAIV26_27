@@ -1,6 +1,6 @@
-#include "Platformer/PlatformerHealthComponent.h"
+#include "PlatformerHealthComponent.h"
 
-#include "Platformer/PlatformerRunSubsystem.h"
+#include "PlatformerRunSubsystem.h"
 #include "Engine/World.h"
 #include "Engine/GameInstance.h"
 #include "GameFramework/Actor.h"

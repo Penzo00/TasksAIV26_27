@@ -1,4 +1,4 @@
-#include "Platformer/PlatformerGameMode.h"
+#include "PlatformerGameMode.h"
 
 #include "GameFramework/Pawn.h"
 #include "UObject/ConstructorHelpers.h"

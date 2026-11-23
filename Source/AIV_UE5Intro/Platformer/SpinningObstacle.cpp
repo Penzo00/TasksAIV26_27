@@ -1,6 +1,6 @@
-#include "Platformer/SpinningObstacle.h"
+#include "SpinningObstacle.h"
 
-#include "Platformer/PlatformerRunSubsystem.h"
+#include "PlatformerRunSubsystem.h"
 #include "Components/PrimitiveComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"

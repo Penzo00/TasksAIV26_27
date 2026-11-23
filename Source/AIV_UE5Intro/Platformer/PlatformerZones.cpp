@@ -1,9 +1,9 @@
-#include "Platformer/PlatformerZones.h"
+#include "PlatformerZones.h"
 
-#include "Platformer/LevelTimer.h"
+#include "LevelTimer.h"
 #include "EngineUtils.h"
-#include "Platformer/PlatformerHealthComponent.h"
-#include "Platformer/PlatformerRunSubsystem.h"
+#include "PlatformerHealthComponent.h"
+#include "PlatformerRunSubsystem.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "GameFramework/Character.h"

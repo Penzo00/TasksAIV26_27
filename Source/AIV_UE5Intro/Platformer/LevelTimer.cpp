@@ -1,6 +1,6 @@
-#include "Platformer/LevelTimer.h"
+#include "LevelTimer.h"
 
-#include "Platformer/PlatformerRunSubsystem.h"
+#include "PlatformerRunSubsystem.h"
 #include "Components/SceneComponent.h"
 #include "Components/TextRenderComponent.h"
 #include "Engine/Engine.h"

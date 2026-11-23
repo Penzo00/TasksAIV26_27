@@ -4,7 +4,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Platformer/PlatformerZone.h"
+#include "PlatformerZone.h"
 #include "PlatformerZones.generated.h"
 
 class ACharacter;

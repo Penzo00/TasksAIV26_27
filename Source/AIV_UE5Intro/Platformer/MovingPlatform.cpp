@@ -1,4 +1,4 @@
-#include "Platformer/MovingPlatform.h"
+#include "MovingPlatform.h"
 
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
