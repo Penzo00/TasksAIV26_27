@@ -3,7 +3,7 @@
 #include "Components/BoxComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/PointLightComponent.h"
-#include "Components/PrimitiveComponent.h"
+#include "Components/MeshComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/SplineComponent.h"
 #include "Engine/StaticMesh.h"
@@ -247,11 +247,11 @@ void AFlickeringLight::Tick(float DeltaSeconds)
 		{
 			continue;
 		}
-		TArray<UPrimitiveComponent*> Prims;
-		Glow->GetComponents<UPrimitiveComponent>(Prims);
-		for (UPrimitiveComponent* Prim : Prims)
+		TArray<UMeshComponent*> Meshes;
+		Glow->GetComponents<UMeshComponent>(Meshes);
+		for (UMeshComponent* MeshComp : Meshes)
 		{
-			Prim->SetScalarParameterValueOnMaterials(GlowParameter, GlowBaseValue * Factor);
+			MeshComp->SetScalarParameterValueOnMaterials(GlowParameter, GlowBaseValue * Factor);
 		}
 	}
 }
