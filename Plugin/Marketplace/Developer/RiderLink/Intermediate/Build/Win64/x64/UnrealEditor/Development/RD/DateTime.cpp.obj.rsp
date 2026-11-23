@@ -1,0 +1,11 @@
+"../Plugins/Marketplace/Developer/RiderLink/Source/RD/src/rd_core_cpp/src/main/types/DateTime.cpp"
+@"../Plugins/Marketplace/Developer/RiderLink/Intermediate/Build/Win64/x64/UnrealEditor/Development/RD/RD.Shared.rsp"
+/FI"../Plugins/Marketplace/Developer/RiderLink/Intermediate/Build/Win64/x64/UnrealEditor/Development/RD/Definitions.h"
+/Fo"../Plugins/Marketplace/Developer/RiderLink/Intermediate/Build/Win64/x64/UnrealEditor/Development/RD/DateTime.cpp.obj"
+/experimental:log "../Plugins/Marketplace/Developer/RiderLink/Intermediate/Build/Win64/x64/UnrealEditor/Development/RD/DateTime.cpp.sarif"
+/sourceDependencies "../Plugins/Marketplace/Developer/RiderLink/Intermediate/Build/Win64/x64/UnrealEditor/Development/RD/DateTime.cpp.dep.json"
+/nologo
+/TP
+/GR
+/std:c++20
+/wd5054

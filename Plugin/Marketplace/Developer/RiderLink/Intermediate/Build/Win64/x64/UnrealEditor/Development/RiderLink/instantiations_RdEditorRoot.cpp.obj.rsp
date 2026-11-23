@@ -1,0 +1,11 @@
+"../Plugins/Marketplace/Developer/RiderLink/Source/RiderLink/Public/Model/RdEditorProtocol/instantiations_RdEditorRoot.cpp"
+@"../Plugins/Marketplace/Developer/RiderLink/Intermediate/Build/Win64/x64/UnrealEditor/Development/RiderLink/RiderLink.Shared.rsp"
+/FI"../Plugins/Marketplace/Developer/RiderLink/Intermediate/Build/Win64/x64/UnrealEditor/Development/RiderLink/Definitions.h"
+/Fo"../Plugins/Marketplace/Developer/RiderLink/Intermediate/Build/Win64/x64/UnrealEditor/Development/RiderLink/instantiations_RdEditorRoot.cpp.obj"
+/experimental:log "../Plugins/Marketplace/Developer/RiderLink/Intermediate/Build/Win64/x64/UnrealEditor/Development/RiderLink/instantiations_RdEditorRoot.cpp.sarif"
+/sourceDependencies "../Plugins/Marketplace/Developer/RiderLink/Intermediate/Build/Win64/x64/UnrealEditor/Development/RiderLink/instantiations_RdEditorRoot.cpp.dep.json"
+/nologo
+/TP
+/GR
+/std:c++20
+/wd5054

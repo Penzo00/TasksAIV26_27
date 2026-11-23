@@ -1,0 +1,15 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "c:\\users\\lorenzo\\desktop\\unrealengine\\engine\\plugins\\marketplace\\blockouttoolsplugin\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\blockouttoolseditorplugin\\module.blockouttoolseditorplugin.cpp",
+        "ProvidedModule": "",
+        "PCH": "c:\\users\\lorenzo\\desktop\\unrealengine\\engine\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\unrealed\\sharedpch.unrealed.cpp20.h.pch",
+        "Includes": [
+            "c:\\users\\lorenzo\\desktop\\unrealengine\\engine\\plugins\\marketplace\\blockouttoolsplugin\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\blockouttoolseditorplugin\\definitions.blockouttoolseditorplugin.h",
+            "c:\\users\\lorenzo\\desktop\\unrealengine\\engine\\plugins\\marketplace\\blockouttoolsplugin\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\blockouttoolseditorplugin\\permoduleinline.gen.cpp",
+            "c:\\users\\lorenzo\\desktop\\unrealengine\\engine\\source\\runtime\\core\\public\\hal\\permoduleinline.inl"
+        ],
+        "ImportedModules": [],
+        "ImportedHeaderUnits": []
+    }
+}

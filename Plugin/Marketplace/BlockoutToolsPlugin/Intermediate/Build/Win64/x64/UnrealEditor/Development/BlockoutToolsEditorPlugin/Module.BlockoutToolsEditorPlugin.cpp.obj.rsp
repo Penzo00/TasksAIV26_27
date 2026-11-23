@@ -1,0 +1,14 @@
+"../Plugins/Marketplace/BlockoutToolsPlugin/Intermediate/Build/Win64/x64/UnrealEditor/Development/BlockoutToolsEditorPlugin/Module.BlockoutToolsEditorPlugin.cpp"
+@"../Plugins/Marketplace/BlockoutToolsPlugin/Intermediate/Build/Win64/x64/UnrealEditor/Development/BlockoutToolsEditorPlugin/BlockoutToolsEditorPlugin.Shared.rsp"
+/FI"../Intermediate/Build/Win64/x64/UnrealEditor/Development/UnrealEd/SharedPCH.UnrealEd.Cpp20.h"
+/FI"../Plugins/Marketplace/BlockoutToolsPlugin/Intermediate/Build/Win64/x64/UnrealEditor/Development/BlockoutToolsEditorPlugin/Definitions.BlockoutToolsEditorPlugin.h"
+/Yu"../Intermediate/Build/Win64/x64/UnrealEditor/Development/UnrealEd/SharedPCH.UnrealEd.Cpp20.h"
+/Fp"../Intermediate/Build/Win64/x64/UnrealEditor/Development/UnrealEd/SharedPCH.UnrealEd.Cpp20.h.pch"
+/Fo"../Plugins/Marketplace/BlockoutToolsPlugin/Intermediate/Build/Win64/x64/UnrealEditor/Development/BlockoutToolsEditorPlugin/Module.BlockoutToolsEditorPlugin.cpp.obj"
+/experimental:log "../Plugins/Marketplace/BlockoutToolsPlugin/Intermediate/Build/Win64/x64/UnrealEditor/Development/BlockoutToolsEditorPlugin/Module.BlockoutToolsEditorPlugin.cpp.sarif"
+/sourceDependencies "../Plugins/Marketplace/BlockoutToolsPlugin/Intermediate/Build/Win64/x64/UnrealEditor/Development/BlockoutToolsEditorPlugin/Module.BlockoutToolsEditorPlugin.cpp.dep.json"
+/nologo
+/TP
+/GR-
+/std:c++20
+/wd5054

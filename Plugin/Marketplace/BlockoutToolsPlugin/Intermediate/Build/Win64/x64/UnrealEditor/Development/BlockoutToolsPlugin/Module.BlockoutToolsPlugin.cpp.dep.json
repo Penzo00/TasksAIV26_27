@@ -1,0 +1,34 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "c:\\users\\lorenzo\\desktop\\unrealengine\\engine\\plugins\\marketplace\\blockouttoolsplugin\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\blockouttoolsplugin\\module.blockouttoolsplugin.cpp",
+        "ProvidedModule": "",
+        "PCH": "c:\\users\\lorenzo\\desktop\\unrealengine\\engine\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\unrealed\\sharedpch.unrealed.cpp20.h.pch",
+        "Includes": [
+            "c:\\users\\lorenzo\\desktop\\unrealengine\\engine\\plugins\\marketplace\\blockouttoolsplugin\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\blockouttoolsplugin\\definitions.blockouttoolsplugin.h",
+            "c:\\users\\lorenzo\\desktop\\unrealengine\\engine\\plugins\\marketplace\\blockouttoolsplugin\\intermediate\\build\\win64\\unrealeditor\\inc\\blockouttoolsplugin\\uht\\blockouttoolsparent.gen.cpp",
+            "c:\\users\\lorenzo\\desktop\\unrealengine\\engine\\plugins\\marketplace\\blockouttoolsplugin\\source\\blockouttoolsplugin\\private\\blockouttoolsparent.h",
+            "c:\\users\\lorenzo\\desktop\\unrealengine\\engine\\source\\runtime\\engine\\classes\\components\\billboardcomponent.h",
+            "c:\\users\\lorenzo\\desktop\\unrealengine\\engine\\intermediate\\build\\win64\\unrealeditor\\inc\\engine\\uht\\billboardcomponent.generated.h",
+            "c:\\users\\lorenzo\\desktop\\unrealengine\\engine\\plugins\\marketplace\\blockouttoolsplugin\\intermediate\\build\\win64\\unrealeditor\\inc\\blockouttoolsplugin\\uht\\blockouttoolsparent.generated.h",
+            "c:\\users\\lorenzo\\desktop\\unrealengine\\engine\\plugins\\marketplace\\blockouttoolsplugin\\intermediate\\build\\win64\\unrealeditor\\inc\\blockouttoolsplugin\\uht\\blockouttoolsplugin.init.gen.cpp",
+            "c:\\users\\lorenzo\\desktop\\unrealengine\\engine\\plugins\\marketplace\\blockouttoolsplugin\\intermediate\\build\\win64\\unrealeditor\\inc\\blockouttoolsplugin\\uht\\blockouttoolssettings.gen.cpp",
+            "c:\\users\\lorenzo\\desktop\\unrealengine\\engine\\plugins\\marketplace\\blockouttoolsplugin\\source\\blockouttoolsplugin\\public\\blockouttoolssettings.h",
+            "c:\\users\\lorenzo\\desktop\\unrealengine\\engine\\source\\runtime\\coreuobject\\public\\uobject\\noexporttypes.h",
+            "c:\\users\\lorenzo\\desktop\\unrealengine\\engine\\source\\runtime\\core\\public\\misc\\fallbackstruct.h",
+            "c:\\users\\lorenzo\\desktop\\unrealengine\\engine\\source\\runtime\\coreuobject\\public\\uobject\\propertyaccessutil.h",
+            "c:\\users\\lorenzo\\desktop\\unrealengine\\engine\\intermediate\\build\\win64\\unrealeditor\\inc\\coreuobject\\uht\\propertyaccessutil.generated.h",
+            "c:\\users\\lorenzo\\desktop\\unrealengine\\engine\\source\\runtime\\coreuobject\\public\\serialization\\testundeclaredscriptstructobjectreferences.h",
+            "c:\\users\\lorenzo\\desktop\\unrealengine\\engine\\intermediate\\build\\win64\\unrealeditor\\inc\\coreuobject\\uht\\testundeclaredscriptstructobjectreferences.generated.h",
+            "c:\\users\\lorenzo\\desktop\\unrealengine\\engine\\source\\runtime\\core\\public\\math\\unitconversion.h",
+            "c:\\users\\lorenzo\\desktop\\unrealengine\\engine\\source\\runtime\\core\\public\\math\\unitconversion.inl",
+            "c:\\users\\lorenzo\\desktop\\unrealengine\\engine\\source\\runtime\\core\\public\\internationalization\\polyglottextdata.h",
+            "c:\\users\\lorenzo\\desktop\\unrealengine\\engine\\intermediate\\build\\win64\\unrealeditor\\inc\\coreuobject\\uht\\noexporttypes.generated.h",
+            "c:\\users\\lorenzo\\desktop\\unrealengine\\engine\\plugins\\marketplace\\blockouttoolsplugin\\intermediate\\build\\win64\\unrealeditor\\inc\\blockouttoolsplugin\\uht\\blockouttoolssettings.generated.h",
+            "c:\\users\\lorenzo\\desktop\\unrealengine\\engine\\plugins\\marketplace\\blockouttoolsplugin\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\blockouttoolsplugin\\permoduleinline.gen.cpp",
+            "c:\\users\\lorenzo\\desktop\\unrealengine\\engine\\source\\runtime\\core\\public\\hal\\permoduleinline.inl"
+        ],
+        "ImportedModules": [],
+        "ImportedHeaderUnits": []
+    }
+}

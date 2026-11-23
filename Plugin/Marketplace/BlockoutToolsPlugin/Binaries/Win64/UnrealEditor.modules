@@ -1,0 +1,8 @@
+{
+	"BuildId": "23852a73-b143-4150-8948-71a70686199e",
+	"Modules": 
+	{
+		"BlockoutToolsEditorPlugin": "UnrealEditor-BlockoutToolsEditorPlugin.dll",
+		"BlockoutToolsPlugin": "UnrealEditor-BlockoutToolsPlugin.dll"
+	}
+}
