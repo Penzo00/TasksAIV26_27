@@ -2,6 +2,10 @@
 
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
+#include "Components/AudioComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Materials/MaterialInterface.h"
+#include "Sound/SoundBase.h"
 #include "UObject/ConstructorHelpers.h"
 
 AMovingPlatform::AMovingPlatform()
@@ -27,6 +31,38 @@ void AMovingPlatform::OnConstruction(const FTransform& Transform)
 void AMovingPlatform::ApplyPlatformSize()
 {
 	Mesh->SetWorldScale3D(PlatformSize / 100.f);
+	if (PlatformMaterial)
+	{
+		Mesh->SetMaterial(0, PlatformMaterial);
+	}
+}
+
+void AMovingPlatform::UpdateSound(int32 Phase)
+{
+	if (Phase == LastPhase || !MoveSound)
+	{
+		LastPhase = Phase;
+		return;
+	}
+	LastPhase = Phase;
+	// fasi: 0 andata, 1 sosta, 2 ritorno, 3 sosta
+	if (Phase == 0 || Phase == 2)
+	{
+		if (!Audio)
+		{
+			Audio = UGameplayStatics::SpawnSoundAttached(MoveSound, Mesh, NAME_None, FVector::ZeroVector,
+				EAttachLocation::KeepRelativeOffset, true, 1.f, 1.f, 0.f, nullptr, nullptr, false);
+		}
+		if (Audio)
+		{
+			Audio->SetPitchMultiplier(Phase == 0 ? PitchForward : PitchBackward);
+			Audio->Play();
+		}
+	}
+	else if (Audio)
+	{
+		Audio->Stop();
+	}
 }
 
 void AMovingPlatform::BeginPlay()
@@ -49,22 +85,28 @@ void AMovingPlatform::Tick(float DeltaSeconds)
 	const float Cycle = 2.f * (TravelTime + PauseTime);
 	const float T = FMath::Fmod(Clock, Cycle);
 	float Alpha;
+	int32 Phase;
 	if (T < TravelTime)
 	{
 		Alpha = T / TravelTime;                                   // andata
+		Phase = 0;
 	}
 	else if (T < TravelTime + PauseTime)
 	{
 		Alpha = 1.f;                                              // sosta all'arrivo
+		Phase = 1;
 	}
 	else if (T < 2.f * TravelTime + PauseTime)
 	{
 		Alpha = 1.f - (T - TravelTime - PauseTime) / TravelTime;  // ritorno
+		Phase = 2;
 	}
 	else
 	{
 		Alpha = 0.f;                                              // sosta alla partenza
+		Phase = 3;
 	}
+	UpdateSound(Phase);
 	if (bSmooth)
 	{
 		Alpha = FMath::InterpEaseInOut(0.f, 1.f, Alpha, 2.f);

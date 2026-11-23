@@ -25,9 +25,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timer", meta = (ClampMin = "0.0"))
 	float WarningThreshold = 10.f;
 
-	/** Scrive il tempo in alto a sinistra dello schermo. */
+	/** Scrive il tempo anche come messaggio di debug in alto a sinistra (l'HUD lo mostra già). */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timer")
-	bool bShowOnScreen = true;
+	bool bShowOnScreen = false;
 
 	/** Scrive il tempo anche nel mondo, sulla scritta dell'actor (utile se lo si piazza in vista). */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timer")

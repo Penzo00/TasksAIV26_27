@@ -1,67 +1,59 @@
-# GD13 – Platformer 3D in tre livelli, con Bot2
+# GD13 – Platformer in tre livelli (con quello che abbiamo visto a lezione)
 
-Il task di game programming (lezioni 12–13) chiede:
+Tre livelli giocabili con **Bot2** (che resta il personaggio del giocatore), costruiti da uno script Python dell'editor e fatti di **classi C++ del progetto**, tutte con i parametri esposti nei Details. In più, rispetto alla consegna:
 
-- un platformer 3D con il personaggio base, che cammina e salta;
-- **almeno tre livelli**: finito un livello si passa al successivo con un **Open Level**;
-- degli **ostacoli**, alcuni dei quali fanno **ricominciare il livello** (trappole, buchi, qualcosa che toglie vita);
-- delle **zone che cambiano il personaggio** (corre più veloce, salta più in alto…);
-- **un livello a tempo**: se non lo si finisce entro il tempo, riparte;
-- qualche asset per decorare (qui si usano gli asset già nel progetto).
+- **Wall run e wall jump** (con una sezione dedicata nel livello 2 e un passaggio veloce nel livello 3).
+- **L'oggetto del doppio salto** nel livello 1: lo raccogli e da lì in poi, premendo salto in aria, fai un secondo salto **controllabile** (la direzione si corregge verso dove stai spingendo lo stick/WASD). Se manchi una piattaforma con il primo salto, col secondo ti salvi.
 
-Il personaggio è **BP_Bot2**.
+## Primo avvio: cosa controllare
 
-## Cosa c'è
+1. **Compilare** (Visual Studio/Rider, oppure "Compile" nell'editor). Ho aggiunto il modulo `EnhancedInput` a `AIV_UE5Intro.Build.cs`. Non ho potuto compilare da qui: se c'è un errore, mandatemi il log e lo sistemo.
+2. **Riavviare l'editor una volta.** In `Config/DefaultEngine.ini` c'è un `[CoreRedirects]` per il pacchetto Scan Labs: i suoi asset sono stati spostati da `Content/Scanlabz_Interiors_1/` alla radice di `Content`, e i riferimenti interni (mesh → materiali → texture) puntavano ancora alla vecchia cartella. Per questo i prop apparivano grigi. Dopo il riavvio conviene fare *Fix Up Redirectors* sulla cartella `Content` e salvare tutto.
+3. **Lanciare gli script** (Tools > Execute Python Script…): prima `Content/Python/aiv_materiali.py` (crea i materiali in `/Game/AIV/Materiali`), poi `gd13_platformer.py`. Lo script dei livelli chiama comunque i materiali da solo.
+4. Aprire `L_GD13_Livello1` e premere **Play**.
+5. Se volete provare il livello 2 o 3 senza passare dal primo: nella GameMode (`PlatformerGameMode`, World Settings) c'è `bDoubleJumpForTesting`, oppure da console `AIVUnlockAll`. `AIVResetProgress` azzera il salvataggio.
 
-### Le classi C++ (`Source/AIV_UE5Intro/Platformer/`)
+Controlli: quelli di Bot2 (WASD, Shift per correre, Spazio per saltare). il tasto di `IA_Interact` (già nell'`IMC_Default`) per interagire con le leve.
 
-Sono i concetti della lezione 13 (componenti, ereditarietà, Game Instance, Delta Time) scritti in C++. Ogni parametro è una proprietà modificabile nei **Details** dell'actor.
+## Le classi C++ nuove (Source/AIV_UE5Intro/Platformer)
 
-| Classe | Che cos'è | Parametri principali |
+| Classe | Cosa fa | Lezione |
 |---|---|---|
-| `PlatformerGameMode` | La GameMode dei livelli dei task: il pawn è `BP_Bot2`. | il percorso di BP_Bot2 è nel `.cpp` |
-| `PlatformerRunSubsystem` | Lo stato che sopravvive ai cambi di livello (un *Game Instance Subsystem*): **conta le morti**, fa ripartire il livello, apre il successivo. È come il contatore delle morti nella Game Instance della lezione, ma non obbliga a toccare `GI_Platform`. | – |
-| `PlatformerHealthComponent` | Il **componente vita** (come l'Health Component della lezione). A zero il livello riparte. Se Bot2 non ce l'ha, le zone di danno glielo aggiungono da sole. | `MaxHealth`, `bRestartLevelOnDeath`, `RestartDelay` |
-| `PlatformerZone` | **Classe base** (astratta) di tutte le zone: una scatola che reagisce quando entra o esce il personaggio, con una pedana visibile sul fondo e una scritta. È l'**ereditarietà** della lezione: le figlie cambiano solo *cosa succede*. | `ZoneExtent`, `bOnlyPlayer`, `bShowVisual`, `VisualMaterial`, `VisualThickness`, `Label` |
-| ↳ `KillZone` | Trappola: chi la tocca riparte (buchi, cadute). | `RestartDelay` |
-| ↳ `DamageZone` | Toglie vita a intervalli finché si resta dentro (la Damage Area della lezione). | `DamagePerHit`, `HitInterval` |
-| ↳ `ModifierZone` | Cambia il personaggio: velocità, salto, gravità. L'effetto finisce dopo un po' che si è usciti, oppure resta per tutto il livello. | `WalkSpeedMultiplier`, `JumpMultiplier`, `GravityMultiplier`, `DurationAfterExit` (0 = finisce subito, negativo = permanente) |
-| ↳ `LevelGoal` | Traguardo: **Open Level** del livello successivo. | `NextLevel`, `Message`, `Delay`, `bResetDeathCount` |
-| `LevelTimer` | Conto alla rovescia, scritto a schermo e nel mondo. Quando arriva a zero il livello riparte. Usa il **Delta Time**, quindi va alla stessa velocità a qualunque fps. Il traguardo lo ferma. | `TimeLimit`, `WarningThreshold`, `bShowOnScreen`, `bShowInWorld` |
-| `MovingPlatform` | Piattaforma che va avanti e indietro con pausa agli estremi (Tick + Lerp, come in lezione). Il punto di arrivo si trascina nel viewport con il rombo del widget. | `EndOffset`, `TravelTime`, `PauseTime`, `StartDelay`, `bSmooth`, `PlatformSize` |
-| `SpinningObstacle` | Sbarra rotante che spinge via il personaggio, oppure lo fa ripartire. | `DegreesPerSecond`, `BarSize`, `BarHeight`, `PushStrength`, `bKillOnTouch` |
+| `UPlatformerAbilitiesComponent` | Doppio salto controllabile, wall run, wall jump, coyote time, jump buffer, "premi E". Aggiunto a Bot2 dalla GameMode, senza toccare il Blueprint. | UE14 (Character Movement, forgiveness), UE12 (interazione) |
+| `UPlatformerRunSubsystem` + `UPlatformerSaveGame` | Monete, abilità sbloccate, record di tempo per livello, morti; salvati su disco. Le monete raccolte valgono solo se arrivi al traguardo. | UE8 (Game Instance), GD16 (Save Game) |
+| `APlatformerHUD` | Pannello in alto a destra (monete, morti, tempo, record, timer, abilità, vita), "[E] …", messaggi. Disegnato in Canvas: si vede anche in Shipping. | UE11 (UI) |
+| `ACoinPickup`, `AAbilityPickup`, `AHealthPickup` | Collezionabili che ruotano e fluttuano, con luce e suono. | GD7, UE8 |
+| `AActivable` → `AActivableDoor`, `AActivableLight`, `AActivableMover` | Classe base + figlie (ereditarietà): porta doppia (a battente o scorrevole), luce attivabile, ascensore. Transizione con curva (come una Timeline). | GD12 (porta doppia), UE7 (ereditarietà, luce attivabile) |
+| `ASwitchBase` → `APressurePlate`, `AInteractLever` | Pedana a pressione e leva. Avvisano i bersagli con un riferimento diretto **e** con un event dispatcher (`OnSwitchChanged`). La leva implementa l'interfaccia `IPlatformerInteractable`. | UE7 (bottone, event dispatcher), UE12 (interfaccia) |
+| `ATurret` + `APlatformerProjectile` | Torretta: rileva il giocatore con una sfera, ruota con interpolazione, pitch limitato (clamp), controlla la linea di vista con un trace, spara con un timer; opzionalmente anticipa il movimento. | UE4, UE5 |
+| `AWindmill` | Pale che ruotano (rotator), la testa guarda il giocatore entro un angolo massimo. | UE4 |
+| `ACubeSpawner` | Matrice di casse fisiche: due cicli for, trace verso il basso per appoggiarle. | UE5 |
+| `AJumpPad`, `ACrumblingPlatform` | Pedana di lancio (Launch Character) e piattaforma che trema, crolla e ricompare. | GD12 |
+| `AMovingPlatform` (aggiornata) | Ora ha materiale e suono, con pitch diverso all'andata e al ritorno. | GD13, UE6 (audio, pitch) |
+| `ATeleportZone`, `AShopZone`, `AModifierZone` (ghiaccio) | Portale; "negozio" che spende monete e attiva qualcosa; zona che cambia attrito e frenata. | GD7, UE8, UE14 |
+| `ASplineFence`, `AScatterArea`, `AFlickeringLight` | Staccionata lungo una spline "per lunghezza"; foliage a mano con un seme; luce del fuoco che tremola (rumore di Perlin). | UE16, UE15, UE13 |
 
-Tutte le classi si trovano nel Content Browser sotto **C++ Classes → AIV_UE5Intro → Platformer**. Si trascinano nel livello come qualunque actor. Se ti serve aggiungere grafica o logica in Blueprint, crea un **Blueprint figlio** (tasto destro sulla classe → *Create Blueprint class based on…*).
+`UPlatformerHealthComponent` e `ADamageZone` ora usano `ApplyDamage`, così si aggiorna anche la barra della vita di Bot2 (`WB_HUD1`).
 
-### I tre livelli (`Content/Maps/L_GD13_Livello1/2/3`)
+### Doppio salto e wall run: i numeri (tutti modificabili nei Details del componente)
 
-Li costruisce lo script `Content/Python/gd13_platformer.py`.
+- Salto: `JumpZVelocity` 650 (≈2,15 m), `AirControl` 0,4, coyote time e jump buffer 0,15 s.
+- Doppio salto: `DoubleJumpZVelocity` 600, `DoubleJumpSteering` 1 (quanto la nuova direzione sostituisce quella vecchia), `DoubleJumpAirControl` 0,8 fino all'atterraggio.
+- Wall run: solo sui muri con il tag **`WallRun`** (`bRequireWallTag`). Si attacca se sei in aria, vicino al muro (80 cm) e vai almeno a 200 cm/s. Corri a 650 cm/s per al massimo 1,5 s, con una gravità ridotta (380). Salto = wall jump (600 via dal muro, 700 in alto); un salto da muro ti ridà il doppio salto.
 
-| Livello | Cosa si impara | Pezzi |
-|---|---|---|
-| **1 – Si impara** | salti e gradini, poi correre | piattaforme con salti di 2 m, gradini di 60 cm, **zona velocità** (×1,8 per 4 s) prima di un salto lungo, traguardo → livello 2 |
-| **2 – Ostacoli** | usare i bonus e non farsi male | **pedana di salto** (×1,7) per salire su una sporgenza di 2,5 m, **piattaforma mobile** sul vuoto, passerella con **zona che toglie vita** (20 ogni 0,4 s), **sbarra rotante** che spinge giù, traguardo → livello 3 |
-| **3 – A tempo** | fare tutto in **60 secondi** | piattaforma mobile laterale, **gravità ridotta** per un salto lungo, **sbarra che uccide** da saltare, **ascensore**, traguardo → di nuovo livello 1 (azzera le morti) |
+## I tre livelli
 
-In ogni livello, sotto il percorso c'è una `KillZone` invisibile: chi cade riparte. Ogni livello ha PlayerStart, sole, cielo e la GameMode `PlatformerGameMode` impostata nei World Settings.
+I blocchi del percorso sono **`Blockout_Box` del plugin BlockOut Tools**, con un codice colore (come nel gym della lezione): grigio = percorso, arancio = salto/interazione, **blu = muro per il wall run**, rosso = pericolo, verde = traguardo. Se il plugin non si carica, lo script usa il cubo dell'engine con un materiale a griglia.
 
-## Come si usa
+### Livello 1 – "Si impara" (mattina, isola sull'acqua)
+Isola d'erba con staccionata su spline, alberi e cespugli, un mulino che ti segue con lo sguardo, una pila di casse fisiche, una pozzanghera (il materiale fisico dell'acqua cambia il suono dei passi). Una **pedana a pressione** apre una **porta doppia** nel muro e accende una lampada (che ascolta l'event dispatcher). Poi gradini con le monete, una **piattaforma mobile** con il suo suono, una **zona velocità** prima di un salto lungo, e **l'oggetto del doppio salto** sotto un faro azzurro. Subito dopo una parete di 3,3 m (con un salto solo non ci si arriva) e tre salti dove, se sbagli, ti correggi in aria. Chi cade in acqua riparte.
 
-1. **Compila** il progetto: apri `AIV_UE5Intro.slnx` e fai *Build*, oppure apri l'editor e lascia che compili il modulo.
-2. In Unreal: **Tools → Execute Python Script…** → `Content/Python/gd13_platformer.py`. Lo script crea i tre livelli e li salva. Rilanciarlo li **cancella e ricrea**.
-3. Apri `L_GD13_Livello1` e premi **Play**.
+### Livello 2 – "Ostacoli e congegni" (pomeriggio)
+Pedana di lancio verso una sporgenza alta → piazza sotto il tiro di una **torretta**, con ripari e una cura → tre **piattaforme che crollano** → una **leva** ("[E] Chiama l'ascensore") → la **sezione di wall run**: due muri blu sfalsati, uno a destra e uno a sinistra; corri sul primo, salta sul secondo, esci sulla piattaforma. Se cadi, sotto c'è un pavimento con una pedana che ti rilancia all'inizio della sezione → corridoio di **lava** (toglie vita, con le decal delle bruciature) → la **sbarra che spinge** → piazza di **ghiaccio** con il "negozio": paghi 5 monete e sale un ponte sicuro, oppure rischi il ponte di ghiaccio gratis.
 
-## Modificare
+### Livello 3 – "Di notte, a tempo" (90 secondi)
+Luna, nebbia volumetrica e **bracieri** con la luce che tremola. Piattaforma laterale → **portale** che ti teletrasporta su un'isola alta → **gravità ridotta** per un salto lunghissimo → piazza con la **sbarra che uccide** (da saltare) → un **wall run** veloce (o un doppio salto ben fatto) → due salti da doppio salto → una **torretta che anticipa** il tuo movimento → ascensore → traguardo, che riporta al livello 1 e azzera le morti.
 
-- **A mano, nell'editor**: seleziona una zona, una piattaforma o una sbarra e cambia i valori nei Details. Ogni parametro ha un tooltip in italiano.
-- **Nello script**: le funzioni `livello_1/2/3` sono un elenco di pezzi, una riga per pezzo, con posizione (cm, il percorso va lungo +X) e parametri in chiaro. Per esempio, per un salto più facile basta avvicinare una `pedana(...)`.
-- **Nel C++**: per una zona nuova, crea una classe figlia di `APlatformerZone` e ridefinisci `OnCharacterEntered` / `OnCharacterExited`.
+## Modificare i livelli
 
-## Cose da controllare la prima volta
-
-Il codice è stato scritto senza poter compilare o provare il progetto, quindi:
-
-1. **Compilazione**: se il compilatore segnala un errore, mandami il messaggio e lo correggo.
-2. **Distanze dei salti**: dipendono da velocità e forza del salto di Bot2, che lo script non conosce. Se un salto è impossibile o troppo facile, sposta la pedana (nell'editor o nello script) o cambia i moltiplicatori delle zone.
-3. **Materiali delle pedane**: le zone usano materiali già presenti (blu, oro, `M_LIGHT` per il danno). Se uno non ti piace, cambia `VisualMaterial` nei Details.
-4. **Messaggi a schermo** (timer, vita, morti): usano *On Screen Debug Message*, quindi si vedono in editor e nelle build di sviluppo, ma non in una build *Shipping*. Per un'interfaccia vera si può fare un widget che legge `GetTimeLeft()` e `GetDeathCount()`, già esposti ai Blueprint.
+Tutto è in `Content/Python/gd13_platformer.py`: ogni riga è un pezzo del percorso con posizione e parametri in chiaro (cm, il percorso va lungo +X). Rilanciare lo script **ricrea** i livelli da capo. In alternativa si modificano a mano nell'editor, come qualunque livello: i congegni hanno i bersagli (`Targets`, `ListenTo`) impostabili con il contagocce nei Details.

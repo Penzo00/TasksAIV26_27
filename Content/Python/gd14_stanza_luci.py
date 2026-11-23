@@ -1,34 +1,60 @@
 # -*- coding: utf-8 -*-
 """
-GD14 - Task di Level Design: "una stanza illuminata con uno scopo".
+GD14 - Task di Level Design: "una stanza significativa, con le luci usate
+con uno scopo".
 
-Costruisce da zero, dentro l'editor di Unreal, un nuovo livello
-(/Game/Maps/L_GD14_StanzaLuci) con:
-  * la stanza fatta di geometria (cubi dell'engine), con una finestra
-    e una porta ricavate lasciando dei buchi nei muri;
-  * i prop del pacchetto Scan Labs (poltrona, lampada, libri, quadri,
-    scatole, piante, frutta, scarpe...), disposti con un "pizzico di caos";
-  * le luci, ognuna con uno scopo preciso (vedi Docs/GD14_stanza_luci.md);
-  * tre CineCamera per i tre screenshot della consegna.
+LA STANZA: "Il rifugio all'ora blu"
+  La soffitta di un rifugio di montagna, appena fa buio. Fuori la luce
+  fredda e blu del crepuscolo e della luna; dentro il fuoco acceso, la
+  lampada vicino alla poltrona, la lampada a sospensione sul tavolo. Qualcuno
+  è appena rientrato: le scarpe bagnate vicino alla porta ancora socchiusa,
+  la legna accatastata, due bicchieri, un libro lasciato aperto.
+
+  L'idea di luce è il CONTRASTO CALDO/FREDDO: il fuoco (1850 K) è il punto
+  focale e la "chiave"; la finestra e la porta (8000-9000 K) sono il
+  contrappunto freddo. Le luci "pratiche" (lampade, candele) sono motivate:
+  si vede da dove vengono. Lo scopo di ogni luce è spiegato in
+  Docs/GD14_stanza_luci.md (e nei commenti di costruisci_luci qui sotto).
+
+  Ispirazione: le immagini di riferimento di un interno di baita (tetto
+  spiovente con travi a vista, camino, tappeto, poltrona, luce calda). La
+  stanza è nostra: pianta, arredo e luci sono progettati da zero.
+
+COSA USA (i vincoli della consegna)
+  - geometria costruita da zero (cubi/cilindri/coni dell'engine e
+    Blockout_Box del plugin BlockOut Tools), nessuna stanza già pronta
+  - prop del pacchetto Scan Labs (NON la sua stanza SM_Room/SM_Window)
+  - le texture di Scan Labs nei nostri materiali World Aligned
+    (aiv_materiali.py): assi del pavimento, intonaco, pietra del camino,
+    tessuti, braci e fiamme emissive
+  - niente Fab, niente Medieval Village
+
+DUE FASI, COME NEL LEVEL DESIGN VERO
+  costruisci(blockout=True)   -> /Game/Maps/L_GD14_Stanza_Blockout
+      solo volumi grigi/colorati del plugin BlockOut Tools e i "proxy" dei
+      mobili: serve a decidere misure, percorsi e inquadrature
+  costruisci()                -> /Game/Maps/L_GD14_StanzaLuci
+      la stanza finita, con materiali, prop, luci e telecamere
 
 COME SI LANCIA
-  1. Abilitare i plugin "Python Editor Script Plugin" e "Editor Scripting
-     Utilities" (sono già aggiunti nel .uproject: basta riavviare l'editor).
-  2. In Unreal: Tools > Execute Python Script... e scegliere questo file,
-     oppure nella Output Log, riga di comando "Python":
+  0. Riavviare l'editor una volta dopo aver scaricato il branch (il redirect
+     di Scan Labs in DefaultEngine.ini fa tornare i materiali ai prop).
+  1. Tools > Execute Python Script... > questo file
+     oppure nel Output Log, riga "Python":
          import gd14_stanza_luci; gd14_stanza_luci.costruisci()
-     (la cartella Content/Python è già nel path di Unreal).
-  3. Lo script crea il livello, lo popola e lo salva. Si può rilanciare:
-     ricrea il livello da capo (le modifiche fatte a mano in quel livello
-     si perdono: per lavorarci a mano, salvatelo prima con un altro nome).
+         import gd14_stanza_luci; gd14_stanza_luci.costruisci(blockout=True)
+  2. Il livello viene ricreato da capo ogni volta: le modifiche fatte a mano
+     in quel livello si perdono (salvatelo prima con un altro nome).
+  3. Screenshot: selezionare una delle CineCamera (cartella "Camere"),
+     tasto destro > Pilot, poi High Resolution Screenshot.
 
 DOVE MODIFICARE
-  Tutto ciò che conta sta nelle COSTANTI qui sotto (misure della stanza,
-  colori e intensità delle luci, posizione e rotazione dei prop). Le
-  funzioni in fondo sono solo "attrezzi" e di solito non vanno toccate.
+  Le COSTANTI qui sotto: misure, luci (intensità, temperatura) e orientamento
+  dei mobili. Se una poltrona guarda dalla parte sbagliata, cambiare
+  FRONTE_SCANLABS (è l'unica cosa che lo script non può sapere: in che
+  direzione è girata la mesh quando yaw = 0).
 
-Unità: centimetri (come in Unreal). Assi: X avanti, Y destra, Z alto.
-Angoli in gradi.
+Unità: centimetri. Assi: X verso il camino (est), Y verso nord, Z in alto.
 """
 
 import math
@@ -36,163 +62,96 @@ import random
 
 import unreal
 
+import aiv_livelli as a
+import aiv_materiali as mat
+
 # =====================================================================
-#  1. PARAMETRI GENERALI
+#  1. MISURE
 # =====================================================================
 
 LIVELLO = "/Game/Maps/L_GD14_StanzaLuci"
+LIVELLO_BLOCKOUT = "/Game/Maps/L_GD14_Stanza_Blockout"
 
-# Stanza: interno da (0,0) a (LUNGHEZZA, LARGHEZZA), pavimento a z = 0.
-LUNGHEZZA = 700.0      # lungo X
-LARGHEZZA = 520.0      # lungo Y
-ALTEZZA = 300.0
-SPESSORE = 20.0        # spessore di muri, pavimento e soffitto
+LUNGO = 800.0          # interno lungo X (dalla finestra al camino)
+LARGO = 600.0          # interno lungo Y
+GRONDA = 180.0         # altezza dei muretti sotto le falde
+COLMO = 450.0          # altezza del colmo (la trave centrale)
+MURO = 20.0            # spessore dei muri
+TETTO = 25.0           # spessore delle falde
+PENDENZA = (COLMO - GRONDA) / (LARGO / 2.0)   # 0.9 -> falde a ~42 gradi
 
-# Finestra nel muro OVEST (y = 0): da qui entra il sole.
-FINESTRA_X = (180.0, 520.0)   # da x a x
-FINESTRA_Z = (70.0, 250.0)    # dal davanzale all'architrave
+# finestra nel timpano OVEST (x = 0)
+FINESTRA_Y = (120.0, 280.0)
+FINESTRA_Z = (95.0, 245.0)
+# porta nel timpano OVEST, socchiusa
+PORTA_Y = (430.0, 520.0)
+PORTA_Z = 210.0
+PORTA_APERTURA = 32.0   # gradi
 
-# Porta nel muro NORD (x = LUNGHEZZA): dà su un corridoio buio.
-PORTA_Y = (330.0, 430.0)
-PORTA_ALTEZZA = 220.0
-CORRIDOIO_PROFONDITA = 260.0
+# camino sul timpano EST (x = LUNGO)
+CAMINO_Y = (190.0, 410.0)
+FOCOLARE_Z = 140.0      # altezza della bocca del camino
 
-# Brise-soleil: listelli verticali fuori dalla finestra. Spezzano il sole
-# in strisce di luce e ombra sul pavimento (il "ritmo" di cui parla Totten).
-LISTELLI_NUMERO = 7
-LISTELLI_LARGHEZZA = 9.0
-LISTELLI_DISTANZA_DAL_MURO = 45.0
+SEME = 7
 
-SEME_CAOS = 14         # cambia il numero per un "disordine" diverso
-
-# Materiali (Scan Labs). Se nel progetto c'è lo Starter Content, il
-# pavimento usa il parquet dello Starter Content; altrimenti il quarzo.
-MAT_MURI = "/Game/Materials/MI_Room_Walls"
-MAT_PAVIMENTO = ["/Game/StarterContent/Materials/M_Wood_Floor_Walnut_Polished",
-                 "/Game/Materials/MI_Quartz_Floor"]
-MAT_LEGNO = "/Game/Materials/MI_System_Wood"
-MAT_ESTERNO = "/Game/Materials/MI_Ground"
-
-CUBO = "/Engine/BasicShapes/Cube"        # cubo da 100 cm, pivot al centro
-
-# =====================================================================
-#  2. LE LUCI (lo scopo di ciascuna è spiegato nella documentazione)
-# =====================================================================
-
-# Sole di tardo pomeriggio: basso, caldo, entra dalla finestra a ovest.
-SOLE_PITCH = -22.0           # quanto è alto sull'orizzonte (negativo = verso il basso)
-SOLE_YAW = 78.0              # 90 = punta dritto verso +Y (dentro la stanza)
-SOLE_INTENSITA_LUX = 9.0
-SOLE_TEMPERATURA_K = 3300.0
-
-# Sky Light: il colore delle ombre. Leggermente fredda, per contrasto.
-CIELO_COLORE = (0.80, 0.88, 1.0)
-CIELO_INTENSITA = 0.85
-
-# Lampada da lettura: point light SOPRA e DAVANTI al paralume, non dentro,
-# e il paralume non proietta ombre (la "lampada senza ombra" di Lies of P).
-LAMPADA_INTENSITA_CD = 22.0
-LAMPADA_TEMPERATURA_K = 2600.0
-LAMPADA_RAGGIO = 520.0
-
-# Luce di rinforzo sulla libreria: spot debole, SENZA ombre. Rende leggibili
-# i libri sul muro est, che altrimenti sarebbe tutto in ombra.
-RINFORZO_INTENSITA_CD = 7.0
-RINFORZO_TEMPERATURA_K = 3800.0
-
-# Luce del corridoio: rect light fredda oltre la porta. Segnala l'uscita
-# (la luce agli incroci di Alexander) e dà profondità all'inquadratura.
-CORRIDOIO_INTENSITA_CD = 5.0
-CORRIDOIO_COLORE = (0.70, 0.82, 1.0)
-
-# =====================================================================
-#  3. I PROP
-#  (mesh, x, y, yaw, scala, cartella)
-#  x, y = centro dell'oggetto in pianta; l'oggetto viene appoggiato a
-#  terra da solo (oppure sulla quota "z" se indicata con la chiave z=).
-#  Se un oggetto risulta girato al contrario, cambiate il suo yaw
-#  di 90 o 180 gradi: è l'unica cosa che lo script non può sapere.
-# =====================================================================
+# Le mesh di Scan Labs, a yaw = 0, guardano verso +Y (di solito: esportate
+# da un programma con Y in avanti). Se le poltrone guardano il muro invece
+# del fuoco, provare 0, 90 o 180.
+FRONTE_SCANLABS = 90.0
 
 SCANLABS = "/Game/Meshes/"
-
-PROP = [
-    # --- angolo lettura, vicino alla finestra ---------------------------
-    dict(mesh=SCANLABS + "Upholstery/SM_Couch_01_Single", x=170, y=170, yaw=-135,
-         nome="Poltrona", cartella="Prop/AngoloLettura"),
-    dict(mesh=SCANLABS + "Decor/SM_Lamp_Pear_Stand", x=90, y=100, yaw=30,
-         nome="Lampada_Lettura", cartella="Prop/AngoloLettura", ombra=False),
-    dict(mesh=SCANLABS + "Decor/SM_Shoe_Boat", x=235, y=230, yaw=12,
-         nome="Scarpa_1", cartella="Prop/AngoloLettura"),
-    dict(mesh=SCANLABS + "Decor/SM_Shoe_Boat", x=255, y=200, yaw=-31,
-         nome="Scarpa_2", cartella="Prop/AngoloLettura"),
-    dict(mesh=SCANLABS + "Books/SM_Book_012", x=225, y=150, yaw=63,
-         nome="Libro_aperto_a_terra", cartella="Prop/AngoloLettura"),
-
-    # --- tavolino (costruito con i cubi) e sopra la frutta --------------
-    dict(mesh=SCANLABS + "Fruits/SM_FruitsOnPlate", x=310, y=150, yaw=20,
-         z="TAVOLINO", nome="Frutta", cartella="Prop/Tavolino"),
-    dict(mesh=SCANLABS + "Decor/SM_Glas_Wine_A", x=280, y=185, yaw=0,
-         z="TAVOLINO", nome="Bicchiere", cartella="Prop/Tavolino"),
-
-    # --- muro sud (dietro la telecamera principale): piante e scatole ----
-    dict(mesh=SCANLABS + "Decor/SM_Groundplant_12", x=60, y=455, yaw=0,
-         nome="Pianta", cartella="Prop/Piante"),
-    dict(mesh=SCANLABS + "Decor/SM_Vase_Flower", x=640, y=60, yaw=0,
-         nome="Vaso", cartella="Prop/Piante"),
-
-    # --- scatole del trasloco vicino alla porta: il pizzico di caos -----
-    dict(mesh=SCANLABS + "Decor/SM_Box_A", x=600, y=230, yaw=7,
-         nome="Scatola_A", cartella="Prop/Scatole"),
-    dict(mesh=SCANLABS + "Decor/SM_Box_B", x=605, y=150, yaw=-11,
-         nome="Scatola_B", cartella="Prop/Scatole"),
-    dict(mesh=SCANLABS + "Decor/SM_Box_C", x=600, y=230, yaw=-4,
-         z="SOPRA:Scatola_A", nome="Scatola_C", cartella="Prop/Scatole"),
-
-    # --- dettagli -------------------------------------------------------
-    dict(mesh=SCANLABS + "Decor/SM_Buddha", x=640, y=470, yaw=-90,
-         nome="Statuetta", cartella="Prop/Dettagli"),
-    dict(mesh=SCANLABS + "Decor/SM_Deco_Bean", x=330, y=120, yaw=40,
-         z="TAVOLINO", nome="Soprammobile", cartella="Prop/Tavolino"),
-]
-
-# Quadri appesi: (mesh, muro, posizione lungo il muro, altezza del centro)
-# muro = "sud" (x=0), "est" (y=LARGHEZZA), "nord" (x=LUNGHEZZA)
-QUADRI = [
-    dict(mesh=SCANLABS + "Decor/SM_Picture_A", muro="sud", lungo=300, z=165, nome="Quadro_A"),
-    dict(mesh=SCANLABS + "Decor/SM_Picture_C", muro="nord", lungo=160, z=160, nome="Quadro_C"),
-]
-PRESA = dict(mesh=SCANLABS + "Decor/SM_Plug_Socket", muro="sud", lungo=120, z=30, nome="Presa")
-
-# Libreria costruita con i cubi contro il muro EST, riempita di libri.
-LIBRERIA_CENTRO_X = 330.0
-LIBRERIA_LARGHEZZA = 260.0
-LIBRERIA_PROFONDITA = 35.0
-LIBRERIA_RIPIANI_Z = [12.0, 60.0, 108.0, 156.0, 204.0]   # quote dei ripiani
-LIBRI_GRUPPI = [SCANLABS + "Books/SM_Books_Mix_%d" % i for i in range(1, 9)]
-
-# Tavolino: piano a questa quota, costruito con 5 cubi.
-TAVOLINO = dict(x=305, y=150, lato_x=80, lato_y=60, altezza=45)
+CUBO = a.CUBO
+CILINDRO = a.CILINDRO
+CONO = "/Engine/BasicShapes/Cone"
+SFERA = a.SFERA
 
 # =====================================================================
-#  4. LE TELECAMERE PER GLI SCREENSHOT
-#  (posizione, punto guardato, lunghezza focale in mm)
+#  2. LE LUCI (il perché di ognuna è in costruisci_luci e nella doc)
+# =====================================================================
+
+FUOCO_CD = 130.0
+FUOCO_K = 1850.0
+LUNA_LUX = 2.5
+LUNA_K = 8500.0
+LUNA_PITCH = -24.0
+LUNA_YAW = 12.0            # 0 = la luce va verso +X, cioè entra dalla finestra
+CIELO_INTENSITA = 0.35
+LAMPADA_TERRA_CD = 22.0
+SOSPENSIONE_CD = 28.0
+LAMPADE_K = 2700.0
+CANDELA_CD = 2.5
+PORTA_CD = 14.0
+PORTA_K = 9500.0
+LIBRI_CD = 5.0
+
+# =====================================================================
+#  3. TELECAMERE (posizione, punto guardato, focale mm)
 # =====================================================================
 
 TELECAMERE = [
-    dict(nome="Cam_1_Insieme", pos=(40, 500, 170), guarda=(450, 120, 90), focale=16.0),
-    dict(nome="Cam_2_AngoloLettura", pos=(380, 330, 140), guarda=(150, 140, 70), focale=24.0),
-    dict(nome="Cam_3_LibreriaEPorta", pos=(160, 120, 150), guarda=(520, 480, 110), focale=18.0),
+    dict(nome="Cam_1_Insieme", pos=(70, 95, 165), guarda=(760, 330, 90), focale=18.0),
+    dict(nome="Cam_2_Camino", pos=(420, 300, 105), guarda=(770, 300, 75), focale=28.0),
+    dict(nome="Cam_3_Controcampo_Finestra", pos=(725, 470, 150), guarda=(0, 230, 135), focale=20.0),
+    dict(nome="Cam_4_AngoloLettura", pos=(420, 360, 115), guarda=(610, 545, 85), focale=35.0),
 ]
 
+PARTENZA_GIOCATORE = (330.0, 150.0, 100.0)
+PARTENZA_YAW = 20.0
 
 # =====================================================================
-#  ATTREZZI (di solito non serve modificarli)
+#  ATTREZZI
 # =====================================================================
 
-attori = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
-livelli = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
-_creati = {}   # nome -> attore, per riferirsi agli oggetti già piazzati
+attori = a.attori
+BLOCKOUT = False
+M = {}
+_creati = {}
+
+# nel blockout ogni materiale diventa un colore del plugin
+TINTE = {"Assi": "percorso2", "Intonaco": "percorso", "IntonacoChiaro": "percorso",
+         "Pietra": "riparo", "Travi": "salto", "LegnoScuro": "salto", "LegnoChiaro": "salto",
+         "LegnoDipinto": "muro", "TessutoRosso": "pericolo", "TessutoOcra": "pericolo",
+         "Prato": "traguardo", "Braci": "pericolo", "Fiamma": "pericolo"}
 
 
 def log(msg):
@@ -203,464 +162,557 @@ def avviso(msg):
     unreal.log_warning("[GD14] " + msg)
 
 
-def carica(percorso):
-    """Carica un asset; se manca, avvisa e restituisce None (lo script continua)."""
-    if isinstance(percorso, (list, tuple)):
-        for p in percorso:
-            if unreal.EditorAssetLibrary.does_asset_exist(p):
-                return unreal.EditorAssetLibrary.load_asset(p)
-        avviso("nessuno di questi asset esiste: %s" % (percorso,))
-        return None
-    if not unreal.EditorAssetLibrary.does_asset_exist(percorso):
-        avviso("asset mancante: " + percorso)
-        return None
-    return unreal.EditorAssetLibrary.load_asset(percorso)
+def _reg(attore, nome):
+    if attore is not None:
+        _creati[nome] = attore
+    return attore
 
 
-def imposta(oggetto, proprieta, valore):
-    """set_editor_property che non blocca lo script se una proprietà cambia nome."""
-    try:
-        oggetto.set_editor_property(proprieta, valore)
-        return True
-    except Exception as e:  # noqa: BLE001
-        avviso("non riesco a impostare %s.%s (%s)" % (oggetto.get_name(), proprieta, e))
-        return False
+def box(nome, cartella, x0, x1, y0, y1, z0, z1, chiave, ombre=True, collisione=True):
+    """Un parallelepipedo da (x0,y0,z0) a (x1,y1,z1)."""
+    centro = ((x0 + x1) / 2.0, (y0 + y1) / 2.0, (z0 + z1) / 2.0)
+    dim = (x1 - x0, y1 - y0, z1 - z0)
+    if BLOCKOUT:
+        att = a.blocco(nome, cartella, centro, dim, tinta=TINTE.get(chiave, "percorso"))
+    else:
+        att = a.blocco(nome, cartella, centro, dim, materiale=M.get(chiave))
+    if att is not None and (not ombre or not collisione):
+        for c in att.get_components_by_class(unreal.StaticMeshComponent):
+            if not ombre:
+                c.set_cast_shadow(False)
+            if not collisione:
+                c.set_collision_enabled(unreal.CollisionEnabled.NO_COLLISION)
+    return _reg(att, nome)
 
 
-def rot(pitch=0.0, yaw=0.0, roll=0.0):
-    return unreal.Rotator(roll=roll, pitch=pitch, yaw=yaw)
+def forma(nome, cartella, mesh_base, centro, scala, rotatore, chiave, ombre=True, collisione=True):
+    """Una forma base dell'engine (cubo/cilindro/cono/sfera) orientata a piacere."""
+    sm = a.carica(mesh_base)
+    att = attori.spawn_actor_from_object(sm, a.vec(*centro), rotatore)
+    att.set_actor_scale3d(a.vec(*scala))
+    c = att.static_mesh_component
+    materiale = M.get("Percorso") if BLOCKOUT and chiave not in ("Braci", "Fiamma") else M.get(chiave)
+    if materiale is not None:
+        c.set_material(0, materiale)
+    c.set_cast_shadow(ombre)
+    if not collisione:
+        c.set_collision_enabled(unreal.CollisionEnabled.NO_COLLISION)
+    return _reg(a.nomina(att, nome, cartella), nome)
 
 
-def vec(x, y, z):
-    return unreal.Vector(float(x), float(y), float(z))
+def trave(nome, cartella, p0, p1, larghezza, altezza, su, chiave="Travi"):
+    """Una trave da p0 a p1 (sezione larghezza x altezza), con 'su' come alto."""
+    d = unreal.Vector(p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2])
+    lunghezza = d.length()
+    r = unreal.MathLibrary.make_rot_from_xz(d, a.vec(*su))
+    centro = ((p0[0] + p1[0]) / 2.0, (p0[1] + p1[1]) / 2.0, (p0[2] + p1[2]) / 2.0)
+    return forma(nome, cartella, CUBO, centro, (lunghezza / 100.0, larghezza / 100.0, altezza / 100.0), r, chiave)
 
 
-def colore(rgb):
-    return unreal.LinearColor(rgb[0], rgb[1], rgb[2], 1.0)
+def cilindro(nome, cartella, x, y, z0, raggio, altezza, chiave, ombre=True, collisione=True):
+    return forma(nome, cartella, CILINDRO, (x, y, z0 + altezza / 2.0),
+                 (raggio / 50.0, raggio / 50.0, altezza / 100.0), a.rot(), chiave, ombre, collisione)
 
 
-def etichetta(attore, nome, cartella):
-    attore.set_actor_label(nome)
-    attore.set_folder_path(cartella)
-    _creati[nome] = attore
+def tronco(nome, cartella, centro, lunghezza, raggio, yaw=0.0, chiave="LegnoScuro"):
+    """Un ciocco di legna sdraiato (cilindro con l'asse orizzontale)."""
+    return forma(nome, cartella, CILINDRO, centro, (raggio / 50.0, raggio / 50.0, lunghezza / 100.0),
+                 a.rot(pitch=90.0, yaw=yaw), chiave)
 
 
 def ingombro(mesh, yaw, scala):
-    """Bounding box della mesh ruotata di yaw e scalata, con l'attore nell'origine.
-    Restituisce (minx, maxx, miny, maxy, minz, maxz)."""
-    box = mesh.get_bounding_box()
-    a = math.radians(yaw)
-    c, s = math.cos(a), math.sin(a)
+    """Bounding box della mesh ruotata (yaw) e scalata, con l'attore nell'origine."""
+    b = mesh.get_bounding_box()
+    r = math.radians(yaw)
+    c, s = math.cos(r), math.sin(r)
     xs, ys = [], []
-    for px in (box.min.x, box.max.x):
-        for py in (box.min.y, box.max.y):
+    for px in (b.min.x, b.max.x):
+        for py in (b.min.y, b.max.y):
             px2, py2 = px * scala[0], py * scala[1]
             xs.append(px2 * c - py2 * s)
             ys.append(px2 * s + py2 * c)
-    return (min(xs), max(xs), min(ys), max(ys),
-            box.min.z * scala[2], box.max.z * scala[2])
+    return (min(xs), max(xs), min(ys), max(ys), b.min.z * scala[2], b.max.z * scala[2])
 
 
-def piazza_mesh(mesh, nome, cartella, yaw=0.0, scala=(1, 1, 1),
-                x=None, y=None, xmin=None, xmax=None, ymin=None, ymax=None,
-                zmin=0.0, ombra=True, materiale=None):
-    """Piazza una static mesh scegliendo DOVE va il suo ingombro, non il pivot.
-    Per ogni asse si dà o il centro (x / y) o un bordo (xmin, xmax, ...).
-    In verticale si dà la quota su cui appoggiarla (zmin)."""
-    if mesh is None:
+def dimensioni(percorso):
+    sm = a.carica(percorso)
+    if sm is None:
         return None
-    b = ingombro(mesh, yaw, scala)
-    if x is not None:
-        ax = x - (b[0] + b[1]) / 2.0
-    elif xmin is not None:
-        ax = xmin - b[0]
-    elif xmax is not None:
-        ax = xmax - b[1]
-    else:
-        ax = 0.0
-    if y is not None:
-        ay = y - (b[2] + b[3]) / 2.0
-    elif ymin is not None:
-        ay = ymin - b[2]
-    elif ymax is not None:
-        ay = ymax - b[3]
-    else:
-        ay = 0.0
-    az = zmin - b[4]
-    attore = attori.spawn_actor_from_object(mesh, vec(ax, ay, az), rot(yaw=yaw))
-    attore.set_actor_scale3d(vec(*scala))
-    comp = attore.static_mesh_component
-    if not ombra:
-        comp.set_cast_shadow(False)
-    if materiale is not None:
-        for i in range(comp.get_num_materials()):
-            comp.set_material(i, materiale)
-    etichetta(attore, nome, cartella)
-    return attore
+    b = sm.get_bounding_box()
+    return (b.max.x - b.min.x, b.max.y - b.min.y, b.max.z - b.min.z)
 
 
-def blocco(nome, cartella, x0, x1, y0, y1, z0, z1, materiale):
-    """Un parallelepipedo da (x0,y0,z0) a (x1,y1,z1) fatto con il cubo dell'engine."""
-    cubo = carica(CUBO)
-    return piazza_mesh(cubo, nome, cartella,
-                       scala=((x1 - x0) / 100.0, (y1 - y0) / 100.0, (z1 - z0) / 100.0),
-                       x=(x0 + x1) / 2.0, y=(y0 + y1) / 2.0, zmin=z0,
-                       materiale=materiale)
+def prop(percorso, nome, cartella, x=None, y=None, z=0.0, yaw=0.0, scala=1.0, xmin=None, xmax=None,
+         ymin=None, ymax=None, zmax=None, ombre=True, collisione=True, adatta=None):
+    """Piazza una mesh decidendo dove va il suo INGOMBRO (non il pivot).
+    x/y = centro in pianta (oppure un bordo con xmin/xmax/ymin/ymax);
+    z = quota su cui appoggiarla (oppure zmax = quota del suo punto più alto).
+    adatta = (dx, dy, dz) massimi: la mesh viene rimpicciolita per starci."""
+    sm = a.carica(percorso)
+    if sm is None:
+        return None
+    s = scala if isinstance(scala, (list, tuple)) else (scala, scala, scala)
+    b = ingombro(sm, yaw, s)
+    if adatta:
+        f = min(1.0, adatta[0] / max(1.0, b[1] - b[0]), adatta[1] / max(1.0, b[3] - b[2]),
+                adatta[2] / max(1.0, b[5] - b[4]))
+        s = (s[0] * f, s[1] * f, s[2] * f)
+        b = ingombro(sm, yaw, s)
+    ax = (x - (b[0] + b[1]) / 2.0 if x is not None else
+          xmin - b[0] if xmin is not None else xmax - b[1] if xmax is not None else 0.0)
+    ay = (y - (b[2] + b[3]) / 2.0 if y is not None else
+          ymin - b[2] if ymin is not None else ymax - b[3] if ymax is not None else 0.0)
+    az = zmax - b[5] if zmax is not None else z - b[4]
+    if BLOCKOUT:
+        # nel blockout i mobili sono solo il loro volume ("proxy")
+        return box(nome, "Proxy/" + cartella, ax + b[0], ax + b[1], ay + b[2], ay + b[3],
+                   az + b[4], az + b[5], "LegnoScuro", collisione=collisione)
+    att = attori.spawn_actor_from_object(sm, a.vec(ax, ay, az), a.rot(yaw=yaw))
+    att.set_actor_scale3d(a.vec(*s))
+    c = att.static_mesh_component
+    c.set_cast_shadow(ombre)
+    if not collisione:
+        c.set_collision_enabled(unreal.CollisionEnabled.NO_COLLISION)
+    return _reg(a.nomina(att, nome, cartella), nome)
 
 
-def quota_superiore(attore):
-    origine, estensione = attore.get_actor_bounds(False)
-    return origine.z + estensione.z
+def verso(da, a_punto):
+    """Lo yaw (gradi) per guardare da 'da' verso 'a_punto' in pianta."""
+    return math.degrees(math.atan2(a_punto[1] - da[1], a_punto[0] - da[0]))
 
 
-def spawn_luce(classe, nome, posizione, rotazione):
-    attore = attori.spawn_actor_from_class(classe, posizione, rotazione)
-    etichetta(attore, nome, "Luci")
-    return attore
+def cima(nome):
+    att = _creati.get(nome)
+    if att is None:
+        return None
+    o, e = att.get_actor_bounds(False)
+    return o.z + e.z
 
 
-def imposta_luce(comp, intensita=None, temperatura=None, rgb=None, ombre=True,
-                 unita_candele=True):
-    if unita_candele:
-        imposta(comp, "intensity_units", unreal.LightUnits.CANDELAS)
-    if intensita is not None:
-        comp.set_intensity(intensita)
-    if temperatura is not None:
-        imposta(comp, "use_temperature", True)
-        imposta(comp, "temperature", temperatura)
-    if rgb is not None:
-        comp.set_light_color(colore(rgb), True)
-    comp.set_cast_shadows(ombre)
+def fondo(nome):
+    att = _creati.get(nome)
+    if att is None:
+        return None
+    o, e = att.get_actor_bounds(False)
+    return o.z - e.z
+
+
+def z_tetto(y):
+    """Quota dell'intradosso (la faccia interna) della falda sopra il punto y."""
+    return GRONDA + PENDENZA * min(y, LARGO - y)
 
 
 # =====================================================================
-#  COSTRUZIONE
+#  LA STANZA
 # =====================================================================
 
-def costruisci_stanza():
-    muri = carica(MAT_MURI)
-    pav = carica(MAT_PAVIMENTO)
-    legno = carica(MAT_LEGNO)
-    L, W, H, S = LUNGHEZZA, LARGHEZZA, ALTEZZA, SPESSORE
+def costruisci_involucro():
+    L, W, T = LUNGO, LARGO, MURO
+    # pavimento di assi e il prato fuori
+    box("Pavimento", "Stanza", -T, L + T, -T, W + T, -20, 0, "Assi")
+    box("Prato", "Esterno", -4000, 4000, -4000, 4000, -45, -25, "Prato")
 
-    # pavimento e soffitto
-    blocco("Pavimento", "Stanza", -S, L + S, -S, W + S, -S, 0.0, pav)
-    blocco("Soffitto", "Stanza", -S, L + S, -S, W + S, H, H + S, muri)
+    # muretti sotto le falde (sud y=0, nord y=W)
+    box("Muretto_Sud", "Stanza/Muri", -T, L + T, -T, 0, 0, GRONDA + 5, "Intonaco")
+    box("Muretto_Nord", "Stanza/Muri", -T, L + T, W, W + T, 0, GRONDA + 5, "Intonaco")
 
-    # muro SUD (x = 0) e muro EST (y = W): pieni
-    blocco("Muro_Sud", "Stanza/Muri", -S, 0.0, -S, W + S, 0.0, H, muri)
-    blocco("Muro_Est", "Stanza/Muri", 0.0, L, W, W + S, 0.0, H, muri)
-
-    # muro OVEST (y = 0) con il buco della finestra: quattro pezzi
-    fx0, fx1 = FINESTRA_X
+    # timpano ovest con la finestra e la porta (muro "a pezzi" intorno ai buchi)
+    fy0, fy1 = FINESTRA_Y
     fz0, fz1 = FINESTRA_Z
-    blocco("Muro_Ovest_Sinistra", "Stanza/Muri", 0.0, fx0, -S, 0.0, 0.0, H, muri)
-    blocco("Muro_Ovest_Destra", "Stanza/Muri", fx1, L, -S, 0.0, 0.0, H, muri)
-    blocco("Muro_Ovest_Sottofinestra", "Stanza/Muri", fx0, fx1, -S, 0.0, 0.0, fz0, muri)
-    blocco("Muro_Ovest_Architrave", "Stanza/Muri", fx0, fx1, -S, 0.0, fz1, H, muri)
-    # davanzale di legno
-    blocco("Davanzale", "Stanza/Finestra", fx0 - 10, fx1 + 10, -S - 4, 18.0, fz0 - 4, fz0, legno)
-
-    # muro NORD (x = L) con la porta: tre pezzi
     py0, py1 = PORTA_Y
-    blocco("Muro_Nord_Sinistra", "Stanza/Muri", L, L + S, -S, py0, 0.0, H, muri)
-    blocco("Muro_Nord_Destra", "Stanza/Muri", L, L + S, py1, W + S, 0.0, H, muri)
-    blocco("Muro_Nord_Sopraporta", "Stanza/Muri", L, L + S, py0, py1, PORTA_ALTEZZA, H, muri)
-    # stipiti di legno
-    blocco("Stipite_1", "Stanza/Porta", L - 3, L + S + 3, py0 - 6, py0, 0.0, PORTA_ALTEZZA, legno)
-    blocco("Stipite_2", "Stanza/Porta", L - 3, L + S + 3, py1, py1 + 6, 0.0, PORTA_ALTEZZA, legno)
-    blocco("Stipite_Alto", "Stanza/Porta", L - 3, L + S + 3, py0 - 6, py1 + 6,
-           PORTA_ALTEZZA, PORTA_ALTEZZA + 6, legno)
+    alto = COLMO + 35
+    box("Ovest_1", "Stanza/Muri", -T, 0, -T, fy0, 0, alto, "Intonaco")
+    box("Ovest_SottoFinestra", "Stanza/Muri", -T, 0, fy0, fy1, 0, fz0, "Intonaco")
+    box("Ovest_SopraFinestra", "Stanza/Muri", -T, 0, fy0, fy1, fz1, alto, "Intonaco")
+    box("Ovest_2", "Stanza/Muri", -T, 0, fy1, py0, 0, alto, "Intonaco")
+    box("Ovest_SopraPorta", "Stanza/Muri", -T, 0, py0, py1, PORTA_Z, alto, "Intonaco")
+    box("Ovest_3", "Stanza/Muri", -T, 0, py1, W + T, 0, alto, "Intonaco")
+    # timpano est (dietro il camino)
+    box("Est", "Stanza/Muri", L, L + T, -T, W + T, 0, alto, "Intonaco")
 
-    # corridoio oltre la porta: una scatola chiusa
-    cx0, cx1 = L + S, L + S + CORRIDOIO_PROFONDITA
-    cy0, cy1 = py0 - 120.0, py1 + 120.0
-    blocco("Corridoio_Pavimento", "Stanza/Corridoio", cx0, cx1, cy0, cy1, -S, 0.0, pav)
-    blocco("Corridoio_Soffitto", "Stanza/Corridoio", cx0, cx1, cy0, cy1, H, H + S, muri)
-    blocco("Corridoio_Fondo", "Stanza/Corridoio", cx1, cx1 + S, cy0, cy1, 0.0, H, muri)
-    blocco("Corridoio_Lato_1", "Stanza/Corridoio", cx0, cx1, cy0 - S, cy0, 0.0, H, muri)
-    blocco("Corridoio_Lato_2", "Stanza/Corridoio", cx0, cx1, cy1, cy1 + S, 0.0, H, muri)
+    # le due falde del tetto: lastre inclinate
+    sporgenza = 45.0
+    for nome, y_gronda, segno in (("Falda_Sud", 0.0, 1.0), ("Falda_Nord", W, -1.0)):
+        y_a = y_gronda - segno * sporgenza
+        z_a = GRONDA - PENDENZA * sporgenza
+        y_b, z_b = W / 2.0, COLMO
+        d = a.vec(0, y_b - y_a, z_b - z_a)
+        lung = d.length()
+        dn = a.vec(0, d.y / lung, d.z / lung)                 # lungo la falda, verso il colmo
+        fuori = a.vec(0, -segno * abs(dn.z), abs(dn.y))        # normale: in alto e fuori dalla stanza
+        centro = ((L) / 2.0, (y_a + y_b) / 2.0 + fuori.y * TETTO / 2.0, (z_a + z_b) / 2.0 + fuori.z * TETTO / 2.0)
+        r = unreal.MathLibrary.make_rot_from_xy(a.vec(1, 0, 0), dn)
+        forma(nome, "Stanza/Tetto", CUBO, centro, ((L + 2 * sporgenza) / 100.0, lung / 100.0, TETTO / 100.0),
+              r, "LegnoScuro")
+    box("Colmo_Esterno", "Stanza/Tetto", -sporgenza, L + sporgenza, W / 2 - 30, W / 2 + 30, COLMO, COLMO + 40,
+        "LegnoScuro")
 
-    # battiscopa: un dettaglio che "chiude" i muri
-    for nome, a in (("Battiscopa_Sud", (0, 2, 0, W)), ("Battiscopa_Est", (0, L, W - 2, W))):
-        blocco(nome, "Stanza/Dettagli", a[0], a[1], a[2], a[3], 0.0, 9.0, legno)
+
+def costruisci_travi():
+    """Travi a vista: colmo, puntoni ogni metro, due catene."""
+    W = LARGO
+    box("Trave_Colmo", "Stanza/Travi", -MURO, LUNGO + MURO, W / 2 - 12, W / 2 + 12, COLMO - 24, COLMO + 2, "Travi")
+    lung = math.hypot(W / 2.0, COLMO - GRONDA)
+    for lato, segno, y_g in (("S", 1.0, 0.0), ("N", -1.0, W)):
+        # verso l'interno (giù) rispetto alla falda
+        dentro = (0.0, segno * (COLMO - GRONDA) / lung, -(W / 2.0) / lung)
+        su = (0.0, -dentro[1], -dentro[2])
+        off = 9.0
+        for i, x in enumerate(range(40, int(LUNGO), 100)):
+            if x > LUNGO - 90:
+                continue   # lì passa la canna fumaria
+            p0 = (x, y_g + dentro[1] * off, GRONDA + dentro[2] * off)
+            p1 = (x, W / 2.0 + dentro[1] * off, COLMO + dentro[2] * off)
+            trave("Puntone_%s_%d" % (lato, i), "Stanza/Travi", p0, p1, 14, 18, su)
+    for x in (240.0, 540.0):
+        zc = 335.0
+        y0 = (zc - GRONDA) / PENDENZA
+        box("Catena_%d" % int(x), "Stanza/Travi", x - 8, x + 8, y0, W - y0, zc - 10, zc + 10, "Travi")
 
 
-def costruisci_finestra():
-    """La mesh della finestra di Scan Labs, adattata al buco nel muro."""
-    finestra = carica(SCANLABS + "Room/SM_Window")
-    fx0, fx1 = FINESTRA_X
+def costruisci_finestra_e_porta():
+    fy0, fy1 = FINESTRA_Y
     fz0, fz1 = FINESTRA_Z
-    if finestra is not None:
-        box = finestra.get_bounding_box()
-        dx, dy = box.max.x - box.min.x, box.max.y - box.min.y
-        dz = box.max.z - box.min.z
-        # il lato più sottile della mesh va messo perpendicolare al muro (asse Y)
-        yaw = 90.0 if dx < dy else 0.0
-        larghezza = max(dx, dy)
-        scala_l = (fx1 - fx0) / larghezza
-        scala_h = (fz1 - fz0) / dz
-        scala = (scala_l, 1.0, scala_h) if yaw == 0.0 else (1.0, scala_l, scala_h)
-        piazza_mesh(finestra, "Finestra", "Stanza/Finestra", yaw=yaw, scala=scala,
-                    x=(fx0 + fx1) / 2.0, y=-SPESSORE / 2.0, zmin=fz0)
+    c = "Stanza/Finestra"
+    box("Davanzale", c, -MURO - 8, 14, fy0 - 10, fy1 + 10, fz0 - 6, fz0, "LegnoScuro")
+    box("Telaio_S", c, -MURO, 0, fy0, fy0 + 8, fz0, fz1, "LegnoScuro")
+    box("Telaio_N", c, -MURO, 0, fy1 - 8, fy1, fz0, fz1, "LegnoScuro")
+    box("Telaio_Alto", c, -MURO, 0, fy0, fy1, fz1 - 8, fz1, "LegnoScuro")
+    box("Montante", c, -12, -6, (fy0 + fy1) / 2 - 3, (fy0 + fy1) / 2 + 3, fz0, fz1, "LegnoScuro")
+    box("Traverso", c, -12, -6, fy0, fy1, (fz0 + fz1) / 2 - 3, (fz0 + fz1) / 2 + 3, "LegnoScuro")
+    if not BLOCKOUT:
+        vetro = a.carica("/Game/Materials/MI_Win_Glas")
+        if vetro is not None:
+            v = box("Vetro", c, -10, -9, fy0 + 8, fy1 - 8, fz0, fz1 - 8, "LegnoScuro", ombre=False, collisione=False)
+            if v is not None:
+                for comp in v.get_components_by_class(unreal.StaticMeshComponent):
+                    comp.set_material(0, vetro)
+    # tende ai lati della finestra (incorniciano la luce fredda)
+    box("Tenda_S", c, 2, 7, fy0 - 45, fy0 - 2, 55, 262, "TessutoRosso", collisione=False)
+    box("Tenda_N", c, 2, 7, fy1 + 2, fy1 + 45, 55, 262, "TessutoRosso", collisione=False)
+    box("Bastone_Tenda", c, 3, 9, fy0 - 55, fy1 + 55, 264, 268, "Ottone" if not BLOCKOUT else "LegnoScuro")
 
-    # brise-soleil: listelli verticali fuori dalla finestra
-    legno = carica(MAT_LEGNO)
-    passo = (fx1 - fx0) / float(LISTELLI_NUMERO)
-    yl = -SPESSORE - LISTELLI_DISTANZA_DAL_MURO
-    for i in range(LISTELLI_NUMERO):
-        xc = fx0 + passo * (i + 0.5)
-        blocco("Listello_%02d" % (i + 1), "Esterno/BriseSoleil",
-               xc - LISTELLI_LARGHEZZA / 2, xc + LISTELLI_LARGHEZZA / 2,
-               yl - 6, yl, fz0 - 40, fz1 + 40, legno)
-
-    # fuori: un prato e una fila di alberi. Solo ciò che si vede dalla
-    # finestra ("occhio non vede, cuore non duole").
-    piazza_mesh(carica(CUBO), "Prato", "Esterno", scala=(30.0, 20.0, 0.1),
-                x=LUNGHEZZA / 2.0, y=-1000.0, zmin=-10.0, materiale=carica(MAT_ESTERNO))
-    alberi = carica(SCANLABS + "Room/SM_Treeline")
-    if alberi is not None:
-        box = alberi.get_bounding_box()
-        yaw = 0.0 if (box.max.x - box.min.x) >= (box.max.y - box.min.y) else 90.0
-        piazza_mesh(alberi, "Alberi", "Esterno", yaw=yaw, x=LUNGHEZZA / 2.0,
-                    y=-1700.0, zmin=-10.0)
+    # porta socchiusa: si apre verso l'interno, cerniera sul lato nord
+    py0, py1 = PORTA_Y
+    p = "Stanza/Porta"
+    box("Stipite_S", p, -MURO - 2, 4, py0 - 8, py0, 0, PORTA_Z + 8, "LegnoScuro")
+    box("Stipite_N", p, -MURO - 2, 4, py1, py1 + 8, 0, PORTA_Z + 8, "LegnoScuro")
+    box("Architrave_Porta", p, -MURO - 2, 4, py0 - 8, py1 + 8, PORTA_Z, PORTA_Z + 8, "LegnoScuro")
+    larg = py1 - py0 - 2
+    th = math.radians(PORTA_APERTURA)
+    cx = 2.0 + math.sin(th) * larg / 2.0
+    cy = py1 - 1.0 - math.cos(th) * larg / 2.0
+    pannello = forma("Porta_Socchiusa", p, CUBO, (cx, cy, (PORTA_Z - 6) / 2.0 + 2.5),
+                     (0.05, larg / 100.0, (PORTA_Z - 6) / 100.0), a.rot(yaw=PORTA_APERTURA), "LegnoDipinto")
+    if pannello is not None and not BLOCKOUT:
+        maniglia_x = 2.0 + math.sin(th) * (larg - 8) + math.cos(th) * 5
+        maniglia_y = py1 - 1.0 - math.cos(th) * (larg - 8) + math.sin(th) * 5
+        forma("Maniglia", p, SFERA, (maniglia_x, maniglia_y, 100), (0.05, 0.05, 0.05), a.rot(), "Ottone")
+    # zerbino fuori e dentro
+    box("Zerbino", p, 5, 75, py0 + 5, py1 - 5, 0, 1.5, "Rattan" if not BLOCKOUT else "TessutoOcra", collisione=False)
 
 
-def costruisci_mobili():
-    legno = carica(MAT_LEGNO)
-    # --- tavolino: piano + 4 gambe ---
-    t = TAVOLINO
-    x0, x1 = t["x"] - t["lato_x"] / 2, t["x"] + t["lato_x"] / 2
-    y0, y1 = t["y"] - t["lato_y"] / 2, t["y"] + t["lato_y"] / 2
-    blocco("Tavolino_Piano", "Mobili/Tavolino", x0, x1, y0, y1, t["altezza"] - 4, t["altezza"], legno)
-    for i, (gx, gy) in enumerate(((x0, y0), (x1 - 4, y0), (x0, y1 - 4), (x1 - 4, y1 - 4))):
-        blocco("Tavolino_Gamba_%d" % (i + 1), "Mobili/Tavolino",
-               gx, gx + 4, gy, gy + 4, 0.0, t["altezza"] - 4, legno)
+def costruisci_camino():
+    L = LUNGO
+    cy0, cy1 = CAMINO_Y
+    c = "Camino"
+    box("Focolare", c, L - 150, L, cy0 - 20, cy1 + 20, 0, 8, "Pietra")
+    box("Spalla_S", c, L - 95, L, cy0, cy0 + 50, 8, FOCOLARE_Z, "Pietra")
+    box("Spalla_N", c, L - 95, L, cy1 - 50, cy1, 8, FOCOLARE_Z, "Pietra")
+    box("Fondo_Focolare", c, L - 15, L, cy0 + 50, cy1 - 50, 8, FOCOLARE_Z, "Pietra")
+    box("Mensola_Camino", c, L - 110, L, cy0 - 10, cy1 + 10, FOCOLARE_Z, FOCOLARE_Z + 28, "LegnoScuro")
+    box("Canna_Fumaria", c, L - 85, L, cy0 + 10, cy1 - 10, FOCOLARE_Z + 28, COLMO + 110, "Pietra")
 
-    # --- libreria contro il muro est ---
-    W = LARGHEZZA
-    cx, lw, d = LIBRERIA_CENTRO_X, LIBRERIA_LARGHEZZA, LIBRERIA_PROFONDITA
-    lx0, lx1 = cx - lw / 2, cx + lw / 2
-    ly0, ly1 = W - d, W
-    alto = LIBRERIA_RIPIANI_Z[-1] + 3
-    blocco("Libreria_Fianco_1", "Mobili/Libreria", lx0 - 3, lx0, ly0, ly1, 0.0, alto, legno)
-    blocco("Libreria_Fianco_2", "Mobili/Libreria", lx1, lx1 + 3, ly0, ly1, 0.0, alto, legno)
-    for i, z in enumerate(LIBRERIA_RIPIANI_Z):
-        blocco("Libreria_Ripiano_%d" % (i + 1), "Mobili/Libreria", lx0, lx1, ly0, ly1, z - 3, z, legno)
+    # il fuoco: ciocchi, braci, fiamme
+    xf = L - 55
+    ym = (cy0 + cy1) / 2.0
+    tronco("Ciocco_1", c + "/Fuoco", (xf, ym, 18), 85, 8, yaw=90)
+    tronco("Ciocco_2", c + "/Fuoco", (xf - 12, ym - 8, 30), 70, 7, yaw=70)
+    tronco("Ciocco_3", c + "/Fuoco", (xf + 10, ym + 10, 30), 70, 7, yaw=110)
+    forma("Braci", c + "/Fuoco", SFERA, (xf, ym, 11), (0.75, 1.0, 0.1), a.rot(), "Braci", ombre=False,
+          collisione=False)
+    for i, (dy, h) in enumerate(((-22, 0.55), (0, 0.75), (20, 0.5))):
+        forma("Fiamma_%d" % i, c + "/Fuoco", CONO, (xf, ym + dy, 34 + h * 50), (0.22, 0.26, h), a.rot(), "Fiamma",
+              ombre=False, collisione=False)
 
-    # libri sui ripiani (tranne l'ultimo, che è il "tetto" della libreria)
-    caos = random.Random(SEME_CAOS)
-    gruppi = [carica(p) for p in LIBRI_GRUPPI]
-    gruppi = [g for g in gruppi if g is not None]
-    if not gruppi:
+    # legna accatastata accanto al camino (racconta: qualcuno l'ha portata dentro)
+    caos = random.Random(SEME)
+    i = 0
+    for fila, z in enumerate((9, 25, 41)):
+        for k in range(4 - fila):
+            tronco("Legna_%d" % i, c + "/Legna", (L - 45 + caos.uniform(-3, 3), cy1 + 70 + k * 17 + fila * 8, z),
+                   60 + caos.uniform(-6, 6), 8, yaw=caos.uniform(-4, 4))
+            i += 1
+
+    # sulla mensola: due candele, una foto, un vaso
+    zm = FOCOLARE_Z + 28
+    for nome, y in (("Candela_S", cy0 + 15), ("Candela_N", cy1 - 25)):
+        cilindro(nome, c + "/Mensola", L - 100, y, zm, 3.5, 20, "IntonacoChiaro")
+        forma(nome + "_Fiamma", c + "/Mensola", SFERA, (L - 100, y, zm + 23), (0.025, 0.025, 0.05), a.rot(),
+              "Fiamma", ombre=False, collisione=False)
+    prop(SCANLABS + "Decor/SM_Photo", "Foto", c + "/Mensola", x=L - 98, y=ym - 40, z=zm, yaw=180.0 - FRONTE_SCANLABS,
+         adatta=(20, 40, 40))
+    prop(SCANLABS + "Decor/SM_Vase_Flower", "Vaso", c + "/Mensola", x=L - 98, y=ym + 45, z=zm, adatta=(22, 30, 60))
+
+    if not BLOCKOUT:
+        # fuliggine sul fondo del focolare e sul pavimento davanti (UE16: decal)
+        a.decal("Fuliggine_Fondo", M["Fuliggine"], (L - 10, ym, 75), (12, 55, 65), pitch=0.0, yaw=0.0)
+        a.decal("Fuliggine_Mensola", M["Fuliggine"], (L - 108, ym, FOCOLARE_Z + 6), (8, 105, 18), pitch=0.0, yaw=0.0)
+        a.decal("Cenere_Focolare", M["Fuliggine"], (L - 110, ym, 10), (15, 40, 90))
+
+
+def costruisci_soggiorno():
+    """Il tappeto davanti al fuoco, due poltrone, il pouf, la lampada da terra."""
+    c = "Soggiorno"
+    fuoco = (LUNGO - 55, LARGO / 2.0)
+    cilindro("Tappeto", c, 505, 300, 0, 140, 1.2, "TessutoRosso", collisione=False)
+    cilindro("Tappeto_Interno", c, 505, 300, 1.2, 100, 0.8, "TessutoOcra", collisione=False)
+    cilindro("Pouf", c, 500, 300, 0, 28, 40, "TessutoBlu")
+
+    for nome, pos in (("Poltrona_Nord", (560, 480)), ("Poltrona_Sud", (560, 120))):
+        yaw = verso(pos, fuoco) - FRONTE_SCANLABS
+        prop(SCANLABS + "Upholstery/SM_Couch_01_Single", nome, c, x=pos[0], y=pos[1], yaw=yaw)
+
+    # tavolino di rattan accanto alla poltrona nord, con bicchiere e libro
+    cilindro("Tavolino_Gamba", c, 470, 545, 0, 5, 52, "Ottone" if not BLOCKOUT else "LegnoScuro")
+    cilindro("Tavolino_Piano", c, 470, 545, 52, 26, 3, "Rattan" if not BLOCKOUT else "LegnoChiaro")
+    prop(SCANLABS + "Decor/SM_Glas_Wine_B", "Bicchiere_Vino", c, x=462, y=535, z=55)
+    prop(SCANLABS + "Books/SM_Book_012", "Libro_Aperto", c, x=480, y=556, z=55, yaw=25, adatta=(30, 30, 10))
+
+    # lampada da terra dietro la poltrona: il paralume NON fa ombra alla sua luce
+    prop(SCANLABS + "Decor/SM_Lamp_Pear_Stand", "Lampada_Terra", c, x=650, y=560, yaw=200, ombre=False)
+    prop(SCANLABS + "Decor/SM_Groundplant_12", "Pianta", c, x=45, y=575, adatta=(70, 70, 150))
+
+
+def costruisci_cucina():
+    """Il lato sud: mobili dipinti, mensola, tavolo da pranzo con panca."""
+    c = "Cucina"
+    box("Mobile_Base", c, 40, 340, 0, 60, 0, 85, "LegnoDipinto")
+    box("Piano_Lavoro", c, 35, 345, 0, 66, 85, 90, "LegnoChiaro")
+    for i, x in enumerate((115, 190, 265)):
+        box("Anta_Fuga_%d" % i, c, x - 1, x + 1, 60, 61, 8, 80, "LegnoScuro")
+    box("Mensola", c, 60, 320, 0, 26, 135, 139, "LegnoScuro")
+    prop(SCANLABS + "Fruits/SM_Fruitplate", "Piatto_Frutta", c, x=110, y=35, z=90, adatta=(40, 40, 15))
+    prop(SCANLABS + "Decor/SM_Glas_Water", "Bicchiere_Acqua", c, x=205, y=30, z=90)
+    prop(SCANLABS + "Decor/SM_Box_D", "Scatola_Pane", c, x=290, y=32, z=90, adatta=(50, 45, 35))
+    prop(SCANLABS + "Decor/SM_Glas_Wine_A", "Calice_1", c, x=110, y=13, z=139)
+    prop(SCANLABS + "Decor/SM_Glas_Wine_A", "Calice_2", c, x=128, y=14, z=139, yaw=40)
+    prop(SCANLABS + "Books/SM_Books_Mix_7", "Ricettari", c, x=240, y=13, z=139, adatta=(90, 24, 30))
+
+    # tavolo da pranzo
+    tx0, tx1, ty0, ty1, h = 120, 280, 260, 400, 76
+    box("Tavolo_Piano", c, tx0, tx1, ty0, ty1, h - 5, h, "LegnoScuro")
+    for i, (x, y) in enumerate(((tx0 + 8, ty0 + 8), (tx1 - 8, ty0 + 8), (tx0 + 8, ty1 - 8), (tx1 - 8, ty1 - 8))):
+        box("Tavolo_Gamba_%d" % i, c, x - 4, x + 4, y - 4, y + 4, 0, h - 5, "LegnoScuro")
+    box("Panca_Piano", c, 130, 270, 205, 240, 40, 45, "LegnoChiaro")
+    box("Panca_Gamba_1", c, 140, 146, 207, 238, 0, 40, "LegnoChiaro")
+    box("Panca_Gamba_2", c, 254, 260, 207, 238, 0, 40, "LegnoChiaro")
+    cilindro("Sgabello", c, 320, 340, 0, 18, 46, "LegnoChiaro")
+    prop(SCANLABS + "Fruits/SM_FruitsOnPlate", "Frutta", c, x=195, y=335, z=h, yaw=15, adatta=(45, 45, 25))
+    prop(SCANLABS + "Decor/SM_Glas_Wine_A", "Calice_Tavolo", c, x=245, y=300, z=h)
+    prop(SCANLABS + "Decor/SM_Glas_Wine_B", "Calice_Tavolo_2", c, x=150, y=370, z=h, yaw=60)
+    # lampada a sospensione appesa al colmo
+    prop(SCANLABS + "Decor/SM_Lamp_Pending", "Lampada_Sospensione", c, x=200, y=330, zmax=COLMO - 24, ombre=False)
+    if (fondo("Lampada_Sospensione") or 0) < h + 60:
+        # se la mesh ha un cavo lunghissimo, la si accorcia scalandola
+        att = _creati.get("Lampada_Sospensione")
+        if att is not None:
+            att.destroy_actor()
+        prop(SCANLABS + "Decor/SM_Lamp_Pending", "Lampada_Sospensione", c, x=200, y=330, zmax=COLMO - 24,
+             ombre=False, adatta=(80, 80, COLMO - 24 - (h + 90)))
+
+
+def costruisci_libreria():
+    """Libreria bassa sotto la falda nord."""
+    c = "Libreria"
+    x0, x1, y0, y1 = 90.0, 430.0, LARGO - 38, LARGO
+    ripiani = (0.0, 50.0, 100.0, 148.0)
+    for i, z in enumerate(ripiani):
+        box("Ripiano_%d" % i, c, x0, x1, y0, y1, z, z + 4, "LegnoScuro")
+    xm = (x0 + x1) / 2.0
+    for i, x in enumerate((x0, xm - 2, x1 - 4)):
+        box("Fianco_%d" % i, c, x, x + 4, y0, y1, 0, ripiani[-1] + 4, "LegnoScuro")
+    k = 1
+    for z in ripiani[:-1]:
+        for xc in ((x0 + xm) / 2.0, (xm + x1) / 2.0):
+            prop(SCANLABS + "Books/SM_Books_Mix_%d" % k, "Libri_%d" % k, c, x=xc, y=(y0 + y1) / 2.0, z=z + 4,
+                 adatta=(150, 34, 44), yaw=0.0 if _lungo_x("Books/SM_Books_Mix_%d" % k) else 90.0)
+            k = k % 8 + 1
+    zt = ripiani[-1] + 4
+    prop(SCANLABS + "Decor/SM_Buddha", "Statuetta", c, x=150, y=(y0 + y1) / 2.0, z=zt, adatta=(30, 30, 35),
+         yaw=-90.0 - FRONTE_SCANLABS)
+    prop(SCANLABS + "Decor/SM_Box_A", "Scatola_Ricordi", c, x=360, y=(y0 + y1) / 2.0, z=zt, yaw=-8, adatta=(60, 34, 30))
+
+    # quadri ai lati della canna fumaria (sul timpano est) e accanto alla finestra
+    for nome, mesh, y, z in (("Quadro_A", "Decor/SM_Picture_A", 100, 175), ("Quadro_C", "Decor/SM_Picture_C", 500, 165)):
+        _quadro_su_muro_est(SCANLABS + mesh, nome, y, z)
+    # scarpe bagnate vicino alla porta: qualcuno è appena rientrato
+    prop(SCANLABS + "Decor/SM_Shoe_Boat", "Scarpa_1", "Racconto", x=40, y=410, z=0, yaw=80)
+    prop(SCANLABS + "Decor/SM_Shoe_Boat", "Scarpa_2", "Racconto", x=62, y=398, z=0, yaw=55)
+    if not BLOCKOUT:
+        a.decal("Orme_Bagnate", M["Pozza"], (70, 420, 4), (10, 35, 55), yaw=-20.0)
+
+
+def _lungo_x(rel):
+    d = dimensioni(SCANLABS + rel)
+    return d is None or d[0] >= d[1]
+
+
+def _quadro_su_muro_est(percorso, nome, y, z):
+    d = dimensioni(percorso)
+    if d is None:
         return
-    for r, z in enumerate(LIBRERIA_RIPIANI_Z[:-1]):
-        x = lx0 + 8
-        n = 0
-        while True:
-            g = gruppi[(r * 3 + n) % len(gruppi)]
-            yaw = 90.0 + caos.uniform(-4, 4)       # dorso verso la stanza (da verificare)
-            b = ingombro(g, yaw, (1, 1, 1))
-            larg = b[1] - b[0]
-            alt = b[5] - b[4]
-            spazio = (LIBRERIA_RIPIANI_Z[r + 1] - 3) - z
-            if x + larg > lx1 - 6 or alt > spazio - 2:
-                break
-            piazza_mesh(g, "Libri_R%d_%d" % (r + 1, n + 1), "Mobili/Libreria/Libri",
-                        yaw=yaw, xmin=x, ymax=W - 3, zmin=z)
-            x += larg + caos.uniform(3, 25)      # buchi irregolari tra i gruppi
-            n += 1
+    sottile_su_x = d[0] < d[1]
+    # sottile su Y: il davanti guarda verso FRONTE_SCANLABS; lo giro verso -X (la stanza)
+    yaw = 0.0 if sottile_su_x else 180.0 - FRONTE_SCANLABS
+    prop(percorso, nome, "Quadri", xmax=LUNGO - 0.5, y=y, z=z - d[2] / 2.0, yaw=yaw, adatta=(10, 90, 90))
 
 
-def costruisci_prop():
-    tavolino_top = TAVOLINO["altezza"]
-    caos = random.Random(SEME_CAOS + 1)
-    for p in PROP:
-        mesh = carica(p["mesh"])
-        if mesh is None:
-            continue
-        z = 0.0
-        quota = p.get("z")
-        if quota == "TAVOLINO":
-            z = tavolino_top
-        elif isinstance(quota, str) and quota.startswith("SOPRA:"):
-            sotto = _creati.get(quota.split(":", 1)[1])
-            z = quota_superiore(sotto) if sotto else 0.0
-        elif quota is not None:
-            z = float(quota)
-        # un grado o due di rotazione casuale in più: niente è mai perfettamente dritto
-        yaw = p["yaw"] + caos.uniform(-2.0, 2.0)
-        s = p.get("scala", 1.0)
-        piazza_mesh(mesh, p["nome"], p["cartella"], yaw=yaw, scala=(s, s, s),
-                    x=p["x"], y=p["y"], zmin=z, ombra=p.get("ombra", True))
+def costruisci_esterno():
+    """Quello che si vede dalla finestra e dalla porta."""
+    if BLOCKOUT:
+        return
+    prop(SCANLABS + "Tree/SM_Chestnut_4", "Castagno", "Esterno", x=-700, y=160, z=-25, yaw=30)
+    prop(SCANLABS + "Room/SM_Treeline", "Bosco", "Esterno", x=-2600, y=300, z=-25, yaw=90)
+    for i in range(6):
+        a.mesh(SCANLABS + "Decor/SM_Groundplant_12", "Cespuglio_%d" % i, "Esterno",
+               (-250 - i * 90, 380 + (i % 2) * 120, -25), yaw=i * 50.0, scala=1.2, collisione=False)
 
-    # quadri e presa: appoggiati al muro con il lato sottile verso il muro
-    for q in QUADRI + [PRESA]:
-        mesh = carica(q["mesh"])
-        if mesh is None:
-            continue
-        box = mesh.get_bounding_box()
-        sottile_su_x = (box.max.x - box.min.x) < (box.max.y - box.min.y)
-        h = box.max.z - box.min.z
-        zmin = q["z"] - h / 2.0
-        if q["muro"] == "sud":            # muro a x = 0, si guarda verso +X
-            yaw = 0.0 if sottile_su_x else 90.0
-            piazza_mesh(mesh, q["nome"], "Prop/Muri", yaw=yaw, xmin=0.5, y=q["lungo"], zmin=zmin)
-        elif q["muro"] == "nord":         # muro a x = L
-            yaw = 0.0 if sottile_su_x else 90.0
-            piazza_mesh(mesh, q["nome"], "Prop/Muri", yaw=yaw, xmax=LUNGHEZZA - 0.5,
-                        y=q["lungo"], zmin=zmin)
-        else:                             # muro est, y = W
-            yaw = 90.0 if sottile_su_x else 0.0
-            piazza_mesh(mesh, q["nome"], "Prop/Muri", yaw=yaw, ymax=LARGHEZZA - 0.5,
-                        x=q["lungo"], zmin=zmin)
 
+# =====================================================================
+#  LE LUCI
+# =====================================================================
 
 def costruisci_luci():
-    # 1) il sole: UNA sola directional light. Conta solo la rotazione.
-    sole = spawn_luce(unreal.DirectionalLight, "Sole_TardoPomeriggio",
-                      vec(-300, -300, 400), rot(pitch=SOLE_PITCH, yaw=SOLE_YAW))
-    c = sole.get_component_by_class(unreal.DirectionalLightComponent)
-    imposta_luce(c, SOLE_INTENSITA_LUX, SOLE_TEMPERATURA_K, unita_candele=False)
-    imposta(c, "atmosphere_sun_light", True)
+    L, W = LUNGO, LARGO
+    fuoco = (L - 55, W / 2.0)
 
-    # 2) il cielo: atmosfera + sky light (il colore delle ombre) + nebbia leggera
-    attori.spawn_actor_from_class(unreal.SkyAtmosphere, vec(0, 0, 0), rot())
-    cielo = spawn_luce(unreal.SkyLight, "Cielo_ColoreOmbre", vec(-300, -200, 400), rot())
-    c = cielo.get_component_by_class(unreal.SkyLightComponent)
-    imposta(c, "real_time_capture", True)
-    c.set_intensity(CIELO_INTENSITA)
-    c.set_light_color(colore(CIELO_COLORE), True)
-    nebbia = attori.spawn_actor_from_class(unreal.ExponentialHeightFog, vec(0, -800, 0), rot())
-    etichetta(nebbia, "Nebbia_Esterno", "Luci")
+    # 1) IL FUOCO - luce chiave e punto focale. Calda (1850 K), con ombre,
+    #    tremola con un rumore di Perlin (AFlickeringLight, C++): la stanza
+    #    "respira". Fa tremolare anche il materiale emissivo delle braci.
+    luce = a.spawn_cpp("FlickeringLight", "Luce_Fuoco_Chiave", "Luci/Fuoco", (fuoco[0] - 10, fuoco[1], 55),
+                       base_intensity=FUOCO_CD, temperature=FUOCO_K, flicker_amount=0.28, flicker_speed=6.0,
+                       position_jitter=5.0, attenuation_radius=1500.0, source_radius=18.0, cast_shadows=True)
+    a.collega(luce, "glow_actors", [_creati.get("Braci")])
+    # un rimbalzo caldo e morbido fuori dalla bocca del camino, senza ombre:
+    # simula la luce che esce dal focolare e scalda il tappeto
+    a.luce_punto("Fuoco_Rimbalzo_SenzaOmbre", (L - 170, fuoco[1], 40), intensita=FUOCO_CD * 0.18,
+                 temperatura=FUOCO_K + 200, raggio=650.0, sorgente=60.0, ombre=False, cartella="Luci/Fuoco")
 
-    # 3) la lampada da lettura: point light sopra-davanti al paralume
-    lampada = _creati.get("Lampada_Lettura")
-    if lampada is not None:
-        origine, est = lampada.get_actor_bounds(False)
-        pos = vec(origine.x + 25, origine.y + 25, origine.z + est.z - 10)
-    else:
-        pos = vec(115, 125, 150)
-    luce = spawn_luce(unreal.PointLight, "Lampada_LuceMotivata", pos, rot())
-    c = luce.get_component_by_class(unreal.PointLightComponent)
-    imposta_luce(c, LAMPADA_INTENSITA_CD, LAMPADA_TEMPERATURA_K, ombre=True)
-    c.set_attenuation_radius(LAMPADA_RAGGIO)
-    imposta(c, "source_radius", 12.0)       # ombre morbide, come un paralume
+    # 2) LA LUNA - controluce freddo dalla finestra. Disegna la finestra sul
+    #    pavimento e, con la nebbia volumetrica, i "raggi" nell'aria.
+    #    È anche il "sole" dell'atmosfera: colora il cielo di blu profondo.
+    luna = a.luce_esterna(sole_pitch=LUNA_PITCH, sole_yaw=LUNA_YAW, sole_lux=LUNA_LUX, temperatura=LUNA_K,
+                          cielo_intensita=CIELO_INTENSITA, nebbia_densita=0.02, nebbia_volumetrica=True, luna=True)
+    if luna is not None:
+        c = luna.get_component_by_class(unreal.DirectionalLightComponent)
+        a.imposta(c, "volumetric_scattering_intensity", 3.0, silenzioso=True)
+    # 3) IL CIELO (Sky Light, dentro luce_esterna): il colore delle ombre.
+    #    Bassa e fredda: dove il fuoco non arriva la stanza resta blu, non nera.
 
-    # 4) rinforzo sulla libreria: spot senza ombre, dall'alto verso il muro est
-    rinforzo = spawn_luce(unreal.SpotLight, "Rinforzo_Libreria_SenzaOmbre",
-                          vec(LIBRERIA_CENTRO_X, LARGHEZZA - 170, ALTEZZA - 15),
-                          rot(pitch=-45, yaw=90))
-    c = rinforzo.get_component_by_class(unreal.SpotLightComponent)
-    imposta_luce(c, RINFORZO_INTENSITA_CD, RINFORZO_TEMPERATURA_K, ombre=False)
-    c.set_inner_cone_angle(25.0)
-    c.set_outer_cone_angle(50.0)
-    c.set_attenuation_radius(450.0)
-    imposta(c, "source_radius", 30.0)
-
-    # 5) corridoio: rect light fredda sul soffitto oltre la porta
+    # 4) LA PORTA SOCCHIUSA - una rect light fredda fuori dalla porta: una lama
+    #    di luce blu entra sul pavimento e porta l'occhio verso l'uscita.
     py0, py1 = PORTA_Y
-    corr = spawn_luce(unreal.RectLight, "Corridoio_SegnalaUscita",
-                      vec(LUNGHEZZA + SPESSORE + CORRIDOIO_PROFONDITA / 2, (py0 + py1) / 2, ALTEZZA - 5),
-                      rot(pitch=-90))
-    c = corr.get_component_by_class(unreal.RectLightComponent)
-    imposta_luce(c, CORRIDOIO_INTENSITA_CD, rgb=CORRIDOIO_COLORE, ombre=True)
-    imposta(c, "source_width", 120.0)
-    imposta(c, "source_height", 60.0)
-    c.set_attenuation_radius(500.0)
+    a.luce_rect("Porta_LuceFredda", (-90, (py0 + py1) / 2.0, 110), 0.0, 0.0, 90, 200, intensita=PORTA_CD,
+                temperatura=PORTA_K, raggio=800.0, porte=40.0, cartella="Luci/Esterno")
 
-    # 6) post process: unbound, esposizione un po' contenuta, vignetta leggera
-    pp = attori.spawn_actor_from_class(unreal.PostProcessVolume, vec(LUNGHEZZA / 2, LARGHEZZA / 2, 150), rot())
-    etichetta(pp, "PostProcess_Globale", "Luci")
-    imposta(pp, "unbound", True)
-    s = pp.get_editor_property("settings")
-    for prop, val in (("override_auto_exposure_bias", True), ("auto_exposure_bias", -0.3),
-                      ("override_vignette_intensity", True), ("vignette_intensity", 0.35),
-                      ("override_bloom_intensity", True), ("bloom_intensity", 0.5)):
-        try:
-            s.set_editor_property(prop, val)
-        except Exception as e:  # noqa: BLE001
-            avviso("post process: %s (%s)" % (prop, e))
-    imposta(pp, "settings", s)
+    # 5) LAMPADA DA TERRA - luce pratica dell'angolo lettura. Motivata: la
+    #    sorgente si vede. Sta sotto/davanti al paralume (che non fa ombra).
+    _luce_lampada("Lampada_Terra", "Luce_Lampada_Terra", LAMPADA_TERRA_CD, verso_basso=True)
+
+    # 6) LAMPADA A SOSPENSIONE - un cono di luce sul tavolo: separa la zona
+    #    pranzo dal resto e illumina la frutta (secondo punto d'interesse).
+    _luce_lampada("Lampada_Sospensione", "Luce_Sospensione", SOSPENSIONE_CD, verso_basso=True, sotto=True)
+
+    # 7) CANDELE - piccoli accenti caldi sulla mensola (foto, vaso), senza ombre.
+    zm = FOCOLARE_Z + 28
+    for nome, y in (("Candela_S", CAMINO_Y[0] + 15), ("Candela_N", CAMINO_Y[1] - 25)):
+        a.luce_punto("Luce_" + nome, (L - 108, y, zm + 26), intensita=CANDELA_CD, temperatura=2000.0,
+                     raggio=260.0, sorgente=1.0, ombre=False, cartella="Luci/Candele")
+
+    # 8) RIEMPIMENTO SULLA LIBRERIA - spot debole senza ombre: rende leggibili
+    #    i dorsi dei libri, che il fuoco prende di taglio.
+    a.luce_spot("Libreria_Riempimento_SenzaOmbre", (260, W - 230, 330), -40.0, 90.0, intensita=LIBRI_CD,
+                         temperatura=3200.0, raggio=500.0, cono_esterno=45.0, cono_interno=25.0, sorgente=40.0,
+                         ombre=False, cartella="Luci/Riempimento")
+
+    # post process: esposizione stabile per l'interno, bloom per le fiamme,
+    # vignetta per chiudere l'inquadratura, leggera grana
+    a.post_process("PostProcess_Stanza", auto_exposure_min_brightness=0.8, auto_exposure_max_brightness=2.5,
+                   auto_exposure_bias=0.3, bloom_intensity=0.7, vignette_intensity=0.45,
+                   film_grain_intensity=0.15, white_temp=6300.0)
+
+
+def _luce_lampada(nome_mesh, nome_luce, intensita, verso_basso=False, sotto=False):
+    att = _creati.get(nome_mesh)
+    if att is None:
+        return
+    o, e = att.get_actor_bounds(False)
+    if sotto:
+        pos = (o.x, o.y, o.z - e.z - 8.0)
+    else:
+        pos = (o.x, o.y, o.z + e.z - 22.0)
+    a.luce_punto(nome_luce, pos, intensita=intensita, temperatura=LAMPADE_K, raggio=550.0, sorgente=8.0,
+                 ombre=True, cartella="Luci/Lampade")
 
 
 def costruisci_telecamere():
     for t in TELECAMERE:
-        pos = vec(*t["pos"])
-        guarda = vec(*t["guarda"])
-        r = unreal.MathLibrary.find_look_at_rotation(pos, guarda)
-        cam = attori.spawn_actor_from_class(unreal.CineCameraActor, pos, r)
-        etichetta(cam, t["nome"], "Telecamere")
-        comp = cam.get_cine_camera_component()
-        imposta(comp, "current_focal_length", t["focale"])
-        # niente sfocatura: per gli screenshot vogliamo tutto a fuoco
-        fs = comp.get_editor_property("focus_settings")
-        try:
-            fs.set_editor_property("focus_method", unreal.CameraFocusMethod.DISABLE)
-            comp.set_editor_property("focus_settings", fs)
-        except Exception as e:  # noqa: BLE001
-            avviso("focus: %s" % e)
+        r = unreal.MathLibrary.find_look_at_rotation(a.vec(*t["pos"]), a.vec(*t["guarda"]))
+        cam = a.camera(t["nome"], t["pos"], r.pitch, r.yaw, focale=t["focale"], apertura=4.0)
+        if cam is not None:
+            fs = cam.get_cine_camera_component().get_editor_property("focus_settings")
+            a.imposta(fs, "focus_method", unreal.CameraFocusMethod.DISABLE, silenzioso=True)
+            cam.get_cine_camera_component().set_editor_property("focus_settings", fs)
 
 
-def costruisci():
-    """Punto d'ingresso: crea il livello, lo riempie e lo salva."""
-    log("creo il livello " + LIVELLO)
-    if unreal.EditorAssetLibrary.does_asset_exist(LIVELLO):
-        # rilancio: si butta la versione generata in precedenza
-        if not unreal.EditorAssetLibrary.delete_asset(LIVELLO):
-            avviso("non riesco a cancellare il livello vecchio: se è aperto, "
-                   "apri un altro livello e rilancia lo script.")
-            return
-    if not livelli.new_level(LIVELLO):
-        avviso("new_level ha fallito: il livello esiste già o è aperto? "
-               "Chiudilo, oppure cancellalo dal Content Browser, e rilancia.")
+# =====================================================================
+#  PUNTI D'INGRESSO
+# =====================================================================
+
+def costruisci(blockout=False):
+    """Crea il livello (finito, o il blockout), lo riempie e lo salva."""
+    global BLOCKOUT
+    BLOCKOUT = blockout
+    percorso = LIVELLO_BLOCKOUT if blockout else LIVELLO
+    log("creo il livello " + percorso)
+    M.clear()
+    M.update(mat.tutti())
+    if not a.nuovo_livello(percorso):
         return
     _creati.clear()
-    costruisci_stanza()
-    costruisci_finestra()
-    costruisci_mobili()
-    costruisci_prop()
-    costruisci_luci()
+    costruisci_involucro()
+    costruisci_travi()
+    costruisci_finestra_e_porta()
+    costruisci_camino()
+    costruisci_soggiorno()
+    costruisci_cucina()
+    costruisci_libreria()
+    costruisci_esterno()
+    if blockout:
+        # nel blockout bastano una luce per il fuoco e il cielo, per leggere i volumi
+        a.luce_esterna(sole_pitch=LUNA_PITCH, sole_yaw=LUNA_YAW, sole_lux=4.0)
+        a.luce_punto("Fuoco_Blockout", (LUNGO - 65, LARGO / 2.0, 55), intensita=FUOCO_CD, temperatura=FUOCO_K,
+                     raggio=1500.0)
+    else:
+        costruisci_luci()
     costruisci_telecamere()
-    _aggiungi_giocatore()
-    livelli.save_current_level()
-    log("fatto: %d attori. Livello salvato." % len(_creati))
-
-
-# Punto in cui compare Bot2 quando si preme Play (vicino alla porta,
-# rivolto verso la finestra).
-PARTENZA_GIOCATORE = (560.0, 330.0, 100.0)
-PARTENZA_YAW = 180.0
-
-
-def _aggiungi_giocatore():
-    """PlayerStart + GameMode del progetto: con Play si gira nella stanza con Bot2."""
-    import aiv_livelli
-    aiv_livelli.rendi_giocabile(PARTENZA_GIOCATORE, PARTENZA_YAW)
+    a.rendi_giocabile(PARTENZA_GIOCATORE, PARTENZA_YAW)
+    a.salva()
+    log("fatto: %d oggetti. Livello salvato." % len(_creati))
 
 
 def rendi_giocabile():
-    """Rende giocabile il livello GIA' ESISTENTE, senza ricostruirlo:
-    le modifiche fatte a mano restano. Da lanciare una volta sola con
-        import gd14_stanza_luci; gd14_stanza_luci.rendi_giocabile()"""
-    if not livelli.load_level(LIVELLO):
+    """Rende giocabile il livello GIA' ESISTENTE, senza ricostruirlo."""
+    if not a.livelli.load_level(LIVELLO):
         avviso("non riesco ad aprire " + LIVELLO)
         return
     for att in attori.get_all_level_actors():
         if isinstance(att, unreal.PlayerStart):
-            avviso("c'è già un PlayerStart: aggiorno solo la GameMode")
-            import aiv_livelli
-            gm = aiv_livelli.classe_cpp("PlatformerGameMode")
-            mondo = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).get_editor_world()
-            try:
-                mondo.get_world_settings().set_editor_property("default_game_mode", gm)
-            except Exception:  # noqa: BLE001
-                avviso("imposta a mano: World Settings > GameMode Override = PlatformerGameMode")
-            livelli.save_current_level()
+            avviso("c'è già un PlayerStart")
             return
-    _aggiungi_giocatore()
-    livelli.save_current_level()
-    log("stanza resa giocabile con Bot2")
+    a.rendi_giocabile(PARTENZA_GIOCATORE, PARTENZA_YAW)
+    a.salva()
 
 
 if __name__ == "__main__":

@@ -1,4 +1,7 @@
 // GD13/GD14 - GameMode dei livelli dei task: il personaggio è BP_Bot2.
+// Quando Bot2 nasce gli aggiunge i componenti delle abilità e della vita
+// (così non serve modificare il Blueprint), usa l'HUD del platformer e
+// avvisa la Game Instance che il livello è cominciato.
 
 #pragma once
 
@@ -13,4 +16,19 @@ class AIV_UE5INTRO_API APlatformerGameMode : public AGameModeBase
 
 public:
 	APlatformerGameMode();
+
+	/** Se vero, il doppio salto è disponibile anche senza averlo raccolto (per provare i livelli). */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Platformer")
+	bool bDoubleJumpForTesting = false;
+
+	virtual void StartPlay() override;
+	virtual void SetPlayerDefaults(APawn* PlayerPawn) override;
+
+	/** Comando da console (tasto ò / backtick): cancella il salvataggio. */
+	UFUNCTION(Exec)
+	void AIVResetProgress();
+
+	/** Comando da console: sblocca tutte le abilità. */
+	UFUNCTION(Exec)
+	void AIVUnlockAll();
 };

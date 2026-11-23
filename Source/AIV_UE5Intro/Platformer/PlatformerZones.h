@@ -70,6 +70,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Modificatore", meta = (ClampMin = "0.05"))
 	float GravityMultiplier = 1.f;
 
+	/** Moltiplica l'attrito a terra (Ground Friction). Meno di 1 = si scivola: il ghiaccio. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Modificatore", meta = (ClampMin = "0.0"))
+	float GroundFrictionMultiplier = 1.f;
+
+	/** Moltiplica la frenata (Braking Deceleration Walking). Meno di 1 = ci si ferma tardi. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Modificatore", meta = (ClampMin = "0.0"))
+	float BrakingMultiplier = 1.f;
+
 	/**
 	 * Quanto dura l'effetto dopo essere USCITI dalla zona, in secondi.
 	 * 0 = finisce appena si esce. Negativo = dura per tutto il livello.
@@ -89,6 +97,8 @@ private:
 	float SavedWalkSpeed = 0.f;
 	float SavedJumpZ = 0.f;
 	float SavedGravity = 1.f;
+	float SavedFriction = 8.f;
+	float SavedBraking = 2048.f;
 	bool bApplied = false;
 	FTimerHandle RestoreHandle;
 };
@@ -124,4 +134,55 @@ private:
 
 	bool bReached = false;
 	FTimerHandle GoalHandle;
+};
+
+class AActivable;
+
+/** Teletrasporto (GD7): porta il personaggio in un altro punto del livello. */
+UCLASS()
+class AIV_UE5INTRO_API ATeleportZone : public APlatformerZone
+{
+	GENERATED_BODY()
+
+public:
+	/** Punto di arrivo, relativo alla zona (si trascina nel viewport con il rombo). */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Teletrasporto", meta = (MakeEditWidget = "true"))
+	FVector Destination = FVector(500.f, 0.f, 100.f);
+
+	/** Se vero, all'arrivo si azzera la velocità. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Teletrasporto")
+	bool bStopVelocity = true;
+
+protected:
+	virtual void OnCharacterEntered(ACharacter* Character) override;
+};
+
+/**
+ * Il "negozio" (UE8, BP_VolumeShop): entrando con abbastanza monete le si
+ * spende e si attivano gli attivabili collegati (per esempio un cancello).
+ */
+UCLASS()
+class AIV_UE5INTRO_API AShopZone : public APlatformerZone
+{
+	GENERATED_BODY()
+
+public:
+	/** Monete richieste. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Negozio", meta = (ClampMin = "0"))
+	int32 Cost = 5;
+
+	/** Cosa si attiva pagando (porte, piattaforme, luci...). */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Negozio")
+	TArray<TObjectPtr<AActivable>> Targets;
+
+	/** Se vero, si paga una volta sola. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Negozio")
+	bool bOnlyOnce = true;
+
+protected:
+	virtual void BeginPlay() override;
+	virtual void OnCharacterEntered(ACharacter* Character) override;
+
+private:
+	bool bPaid = false;
 };

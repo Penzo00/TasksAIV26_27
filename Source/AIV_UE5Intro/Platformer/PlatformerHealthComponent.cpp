@@ -4,6 +4,8 @@
 #include "Engine/World.h"
 #include "Engine/GameInstance.h"
 #include "GameFramework/Actor.h"
+#include "GameFramework/Controller.h"
+#include "GameFramework/DamageType.h"
 
 UPlatformerHealthComponent::UPlatformerHealthComponent()
 {
@@ -14,6 +16,16 @@ void UPlatformerHealthComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	Health = MaxHealth;
+	if (AActor* Owner = GetOwner())
+	{
+		Owner->OnTakeAnyDamage.AddDynamic(this, &UPlatformerHealthComponent::HandleAnyDamage);
+	}
+}
+
+void UPlatformerHealthComponent::HandleAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType,
+	AController* InstigatedBy, AActor* DamageCauser)
+{
+	ApplyDamage(Damage);
 }
 
 void UPlatformerHealthComponent::ApplyDamage(float Amount)

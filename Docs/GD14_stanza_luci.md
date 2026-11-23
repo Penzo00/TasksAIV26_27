@@ -1,122 +1,86 @@
-# GD14 – Una stanza illuminata con uno scopo
+# GD14 – Il rifugio all'ora blu
 
-Task della lezione 14 di Level Design. La consegna chiede:
+Task della lezione 14 di Level Design. La consegna chiede una stanza nuova costruita da zero con la geometria, solo Scan Labs e Starter Content (niente Fab, niente Medieval Village, niente stanza di Scan Labs riciclata), un risultato pseudo-realistico e *significativo*, luci usate con uno scopo **spiegato**, almeno tre screenshot.
 
-- una stanza nuova, costruita da zero con la geometria;
-- solo Scan Labs e lo Starter Content (niente Fab, niente Medieval Village, niente stanza di Scan Labs riciclata);
-- risultato pseudo-realistico, *a significant room*;
-- luci usate in modo logico, con uno scopo preciso, **spiegando lo scopo**;
-- almeno tre screenshot.
+> Nota: lo Starter Content non è nel progetto, quindi ho usato solo Scan Labs (mesh e texture) più le forme base dell'engine e il plugin BlockOut Tools.
 
-## L'idea: il salotto del lettore, al tramonto
+## L'idea
 
-Un piccolo salotto con un angolo lettura vicino alla finestra. Il sole del tardo pomeriggio entra basso da ovest, attraverso dei listelli di legno (un brise-soleil) che lo spezzano in strisce sul pavimento e sulla libreria. La lampada accanto alla poltrona è già accesa: la stanza sta passando dalla luce del giorno a quella della sera. Oltre la porta, il corridoio è freddo e buio.
+La soffitta di un rifugio di montagna, nel momento in cui fa buio. Fuori il blu del crepuscolo e la luna; dentro il fuoco acceso, la lampada vicino alla poltrona, la lampada sul tavolo. **Qualcuno è appena rientrato**: le scarpe bagnate (con le orme) accanto alla porta ancora socchiusa, la legna accatastata vicino al camino, due bicchieri sul tavolino, un libro lasciato aperto.
 
-Il tema visivo è il **contrasto caldo/freddo**: il sole e la lampada sono caldi (arancio), le ombre e il corridoio sono freddi (azzurri).
+Il tema visivo è il **contrasto caldo/freddo**: il fuoco (1850 K) è il punto focale e la luce chiave; la finestra e la porta (8500–9500 K) sono il contrappunto freddo. Le immagini di riferimento (interno di baita, tetto spiovente con travi a vista, camino, tappeto, poltrona) hanno dato il **mood**; pianta, arredo e luci sono progettati da zero.
 
-## Pianta
+## Pianta (8 × 6 m, tetto a due falde, colmo a 4,5 m)
 
 ```
-            y = 0  (muro OVEST, con la finestra)
-     x=0 +----------[====FINESTRA====]--------------+ x=700
-         |  lampada                                 |
-         |     poltrona   tavolino     scatole      |---+
-  muro   |                 (frutta)                 | P |  corridoio
-  SUD    |  scarpe                                  | O |  (rect light
- (quadro,|                                          | R |   fredda)
-  presa) |  pianta    [=====LIBRERIA=====]  statuetta| T |
-         +------------------------------------------+---+
-            y = 520 (muro EST)         muro NORD (quadro, porta)
+                 y = 600  (falda nord, muretto 1,8 m)
+   x=0 +--------------------------------------------------+ x=800
+ PORTA |  pianta   [====== LIBRERIA BASSA ======]  lampada | legna
+ soc-  |  scarpe                      poltrona N    da terra|
+ chiusa|                 ( tappeto  )                 +----+
+       |   [ TAVOLO ]    (  pouf    )                 |FUOCO| CAMINO
+FINE-  |    panca        (          )                 +----+ (pietra,
+ STRA  |                              poltrona S            |  mensola,
+(luna) |  [===== CUCINA: mobili dipinti, mensola =====]     |  candele)
+       +--------------------------------------------------+
+                 y = 0  (falda sud, muretto 1,8 m)
 ```
 
-Fuori dalla finestra ci sono solo un prato e una fila di alberi: è tutto ciò che si vede da dentro ("occhio non vede, cuore non duole").
+L'asse della stanza va dalla **finestra (fredda)** al **camino (caldo)**: entrando dalla porta lo sguardo corre lungo tutta la stanza fino al fuoco.
 
 ## Le luci e il loro scopo
 
 | # | Luce | Tipo | Scopo |
-|---|------|------|-------|
-| 1 | `Sole_TardoPomeriggio` | Directional, ~3300 K, bassa (pitch −22°) | È la **luce principale e la composizione**. Entra dalla finestra e, passando tra i listelli, disegna strisce di luce e ombra (il chiaroscuro di cui si è parlato a lezione, e il "ritmo" delle ombre di Totten). Le strisce guidano lo sguardo dalla finestra verso la libreria. **Una sola** directional light nel livello. |
-| 2 | `Cielo_ColoreOmbre` | Sky Light, leggermente azzurra | Decide **di che colore sono le ombre**. Azzurrine, così fanno contrasto con il sole caldo: la stanza sembra quella di fine giornata senza bisogno di cambiare nient'altro. |
-| 3 | `Lampada_LuceMotivata` | Point light, ~2600 K | La lampada "motiva" la luce dell'angolo lettura: il giocatore vede la lampada e accetta che quella luce venga da lì. Come nel barile di *Lies of P*, la luce **non è dentro il paralume** ma sopra e davanti, verso la poltrona, e la mesh della lampada **non proietta ombre** (la "lampada senza ombra"): così l'angolo è illuminato bene e non ci sono ombre brutte della lampada sul muro. |
-| 4 | `Rinforzo_Libreria_SenzaOmbre` | Spot light debole, **Cast Shadows spento** | **Rafforza** la libreria sul muro est, che altrimenti sarebbe quasi tutta in ombra: i libri si leggono. Senza ombre non se ne accorge nessuno, e non si somma alle ombre delle altre luci (evita anche che Unreal spenga le ombre per troppe luci vicine). |
-| 5 | `Corridoio_SegnalaUscita` | Rect light fredda oltre la porta | **Segnala l'uscita** (la luce agli incroci di Christopher Alexander, citato da Totten) e dà profondità all'inquadratura: il fondo freddo stacca la stanza calda. |
-| – | `PostProcess_Globale` | Post Process Volume, Infinite Extent | Esposizione appena più bassa (per non "bruciare" le strisce di sole), vignetta leggera, bloom moderato. |
+|---|---|---|---|
+| 1 | `Luce_Fuoco_Chiave` | `AFlickeringLight` (C++), point 130 cd, 1850 K, ombre | **Luce chiave e punto focale.** Tutto nella stanza è girato verso il fuoco (le poltrone, il tappeto). Tremola con un rumore di Perlin (intensità e un poco la posizione): le ombre "respirano" come con una fiamma vera, e insieme tremola il materiale emissivo delle braci. |
+| 2 | `Fuoco_Rimbalzo_SenzaOmbre` | Point, debole, raggio sorgente grande, **senza ombre** | La luce che esce dalla bocca del camino e scalda il tappeto e le poltrone. Senza ombre e morbida: non disegna ombre doppie, completa la 1. |
+| 3 | `Luna` | Directional 2,5 lux, 8500 K | **Controluce freddo** dalla finestra: disegna la finestra (con la croce del telaio) sul pavimento e, con la nebbia volumetrica, i raggi nell'aria. È anche il "sole" dell'atmosfera: colora il cielo di blu profondo. Una sola directional nel livello. |
+| 4 | `Cielo` | Sky Light, real time capture, bassa | **Il colore delle ombre**: dove il fuoco non arriva la stanza resta blu, non nera. È il caldo/freddo "gratis". |
+| 5 | `Porta_LuceFredda` | Rect light fuori dalla porta, 9500 K | Una **lama di luce blu** entra dalla porta socchiusa e corre sul pavimento: guida l'occhio verso l'uscita (la luce sui passaggi di Totten/Alexander) e racconta che qualcuno è appena entrato. |
+| 6 | `Luce_Lampada_Terra` | Point 22 cd, 2700 K, ombre | **Luce pratica** dell'angolo lettura. È motivata (la lampada si vede), ma la point light è sotto il paralume e la mesh della lampada **non proietta ombre**: niente ombra brutta della lampada sul muro (la "lampada senza ombra" degli esempi di *Lies of P*). |
+| 7 | `Luce_Sospensione` | Point 28 cd, 2700 K, ombre | Un **cerchio di luce sul tavolo**: separa la zona pranzo dal soggiorno e mette in risalto la frutta, secondo punto d'interesse. |
+| 8 | `Luce_Candela_S/N` | Point 2,5 cd, 2000 K, **senza ombre** | Piccoli **accenti** sulla mensola (la foto, il vaso). Senza ombre perché sono minuscole e vicine al muro. |
+| 9 | `Libreria_Riempimento_SenzaOmbre` | Spot debole, 3200 K, **senza ombre** | **Riempimento**: il fuoco prende la libreria di taglio e i dorsi dei libri sarebbero illeggibili. Senza ombre non si nota e non si somma alle ombre delle altre luci. |
+| – | `PostProcess_Stanza` | Post Process Volume, infinito | Esposizione automatica limitata (non "rincorre" le fiamme), bloom per fuoco e candele, vignetta per chiudere l'inquadratura, un filo di grana, bilanciamento del bianco appena caldo. |
+| – | `Nebbia` | Exponential Height Fog **volumetrica** | Rende visibili i raggi della luna e l'alone del fuoco. |
 
-Più una `SkyAtmosphere` (serve al sole per colorare il cielo) e una `ExponentialHeightFog` leggera per l'esterno.
+Tutte le luci sono **Movable** (il progetto usa Lumen con `r.AllowStaticLighting=False`).
 
-## Come l'ho fatto: uno script Python dell'editor
+## Come è costruita
 
-Non avendo Unreal a disposizione, ho costruito il livello con **uno script Python che gira dentro l'editor**: [`Content/Python/gd14_stanza_luci.py`](../Content/Python/gd14_stanza_luci.py). Lo script fa esattamente quello che si farebbe a mano (trascinare cubi, prop e luci e impostarne i valori nei Details), ma lo fa in automatico e in modo ripetibile. Il risultato è un livello normale, salvato in `Content/Maps/L_GD14_StanzaLuci`. Dopo averlo generato ci si lavora con l'editor come con qualunque altro livello.
+Lo script Python dell'editor [`Content/Python/gd14_stanza_luci.py`](../Content/Python/gd14_stanza_luci.py) fa quello che si farebbe a mano, in modo ripetibile. Il risultato è un livello normale, che poi si ritocca nell'editor.
 
-Perché Python e non C++ o Blueprint:
-
-- **C++** richiederebbe di trasformare il progetto (oggi solo Blueprint) in un progetto C++ e di compilarlo con Visual Studio. Inoltre un attore C++ che piazza oggetti a runtime non lascerebbe nel livello oggetti spostabili a mano.
-- Un **Blueprint** con il Construction Script va bene per cose ripetitive come la staccionata lungo una spline, ma è un file binario: non lo potevo scrivere da qui.
-- Lo **script Python dell'editor** crea attori veri, salvati nella mappa, come se li avessimo trascinati noi. È testo, quindi si legge, si modifica e si versiona su Git.
+- **Due fasi, come nel level design vero.** `costruisci(blockout=True)` crea `L_GD14_Stanza_Blockout`: solo volumi del plugin **BlockOut Tools** (`Blockout_Box`, colorati per funzione) e i "proxy" dei mobili, per decidere misure e inquadrature. `costruisci()` crea `L_GD14_StanzaLuci`, la stanza finita.
+- **Geometria da zero.** Muri, pavimento, camino e mobili sono `Blockout_Box` con un materiale nostro (*Custom Material*); le falde e le travi inclinate sono cubi orientati. Il muro con finestra e porta è fatto "a pezzi" intorno ai buchi. Le travi a vista (colmo, puntoni ogni metro, due catene) seguono la pendenza del tetto.
+- **Materiali World Aligned** ([`aiv_materiali.py`](../Content/Python/aiv_materiali.py)): le texture di Scan Labs (legno, intonaco, quarzo per la pietra, tessuti, rattan, corteccia) sono proiettate dai tre assi del mondo, quindi non si stirano sui cubi scalati. Le braci e le fiamme hanno un materiale emissivo animato con il rumore (come la lava). Decal per la fuliggine del camino, la cenere e le orme bagnate.
+- **Prop di Scan Labs** (poltrone, lampade, libri, quadri, frutta, bicchieri, scarpe, pianta, castagno e bosco fuori dalla finestra), piazzati per **ingombro** e non per pivot: lo script legge il bounding box della mesh e la appoggia a terra, sul tavolo o contro il muro; se è troppo grande per il posto la rimpicciolisce.
+- **Giocabile**: c'è un PlayerStart e la GameMode del progetto, quindi con **Play** ci si cammina dentro con Bot2.
 
 ### Lanciarlo
 
-1. Apri il progetto. Nel `.uproject` ho abilitato i plugin **Python Editor Script Plugin** ed **Editor Scripting Utilities**: se Unreal chiede di riavviare, riavvia.
-2. Lancia lo script in uno dei due modi:
-   - **Tools → Execute Python Script…** e scegli `Content/Python/gd14_stanza_luci.py`;
-   - oppure dalla **Output Log**: imposta il menu a sinistra della riga di comando su `Python` e scrivi `import gd14_stanza_luci; gd14_stanza_luci.costruisci()`.
-3. Lo script crea `L_GD14_StanzaLuci`, lo riempie (circa 70 attori, ordinati in cartelle nell'Outliner: `Stanza`, `Mobili`, `Prop`, `Luci`, `Telecamere`, `Esterno`) e lo salva. Nella Output Log ogni riga inizia con `[GD14]`. Se manca un asset compare un avviso e lo script va avanti.
+1. Riavviare l'editor una volta dopo aver preso il branch (redirect di Scan Labs in `DefaultEngine.ini`, vedi la doc del GD13).
+2. Tools → **Execute Python Script…** → `Content/Python/gd14_stanza_luci.py`, oppure nella Output Log (riga `Python`):
+   `import gd14_stanza_luci; gd14_stanza_luci.costruisci()` (e `costruisci(blockout=True)` per il blockout).
+3. Rilanciare **ricrea** il livello: se ci avete lavorato a mano, salvatelo prima con un altro nome.
 
-**Attenzione:** rilanciare lo script **cancella e ricrea** `L_GD14_StanzaLuci`. Se ci hai lavorato a mano, prima fai *File → Save Current Level As…* con un altro nome. Se il livello è aperto e non si lascia cancellare, apri un altro livello e rilancia.
+### Da guardare la prima volta (lo script non è stato eseguito in Unreal)
 
-### Come funziona (in breve)
-
-- **Muri con i buchi.** Ogni muro è un cubo dell'engine (`/Engine/BasicShapes/Cube`, 100 cm) scalato. Per la finestra e la porta il muro è diviso in più pezzi che lasciano il buco. È il blockout a primitivi visto nel capitolo 11.
-- **Si piazza l'ingombro, non il pivot.** La funzione `piazza_mesh` legge il *bounding box* della mesh e la posiziona dicendo "il suo centro qui", "il suo bordo contro il muro", "appoggiata a questa quota". Così gli oggetti finiscono a terra, sul tavolino o contro il muro senza conoscere dove ogni modello ha il pivot.
-- **La finestra di Scan Labs** (`SM_Window`) viene scalata per riempire esattamente il buco nel muro.
-- **Libreria e tavolino** sono fatti di cubi con il legno di Scan Labs ("arrangiarsi con quello che si ha"). I gruppi di libri (`SM_Books_Mix_1…8`) vengono messi sui ripiani finché c'è posto, con spazi irregolari tra un gruppo e l'altro.
-- **Il pizzico di caos.** Ogni prop ha un grado o due di rotazione casuale, le scarpe sono storte, le scatole del trasloco sono sghembe e una è appoggiata sull'altra. Il caso è "a seme" (`SEME_CAOS`): rilanciando esce sempre lo stesso disordine; cambiando il numero ne esce un altro.
-- **Il pavimento** usa il parquet dello Starter Content (`M_Wood_Floor_Walnut_Polished`) se lo trova, altrimenti il quarzo di Scan Labs.
-
-### Modificare
-
-Tutto ciò che conta è in cima allo script, nelle costanti in MAIUSCOLO:
-
-- **misure della stanza**, della finestra e della porta (`LUNGHEZZA`, `FINESTRA_X`, `PORTA_Y`, …);
-- **luci**: inclinazione e direzione del sole (`SOLE_PITCH`, `SOLE_YAW`), intensità in candele o lux, temperatura in kelvin, colori;
-- **prop**: la lista `PROP`, con mesh, posizione `x, y`, rotazione `yaw`, scala, `ombra=False` per non proiettare ombre, e `z="TAVOLINO"` o `z="SOPRA:NomeOggetto"` per appoggiare un oggetto sopra un altro;
-- **telecamere**: la lista `TELECAMERE`.
-
-Si può anche **non toccare lo script**: si genera il livello una volta e poi si sposta tutto a mano nell'editor, come al solito.
-
-### Cose da controllare la prima volta
-
-Lo script è stato scritto senza poterlo eseguire in Unreal, quindi alcune cose vanno guardate a occhio:
-
-1. **Verso dei mobili.** Lo script non può sapere da quale lato "guarda" la poltrona di Scan Labs, né da che parte hanno il dorso i gruppi di libri. Se un oggetto è girato male, ruotalo di 90° o 180° (nell'editor, oppure cambiando il suo `yaw` nella lista `PROP`; per i libri la riga `yaw = 90.0 + ...` in `costruisci_mobili`).
-2. **Le strisce di sole.** Se non cadono dove vuoi, cambia `SOLE_YAW` (direzione) e `SOLE_PITCH` (altezza). Basta anche ruotare la directional light nell'editor.
-3. **Esposizione.** Con Lumen e l'esposizione automatica l'interno può sembrare più scuro o più chiaro del previsto: regola `auto_exposure_bias` nel Post Process o l'intensità del sole.
-4. **Nomi degli asset.** Se nella Output Log compare `asset mancante`, il percorso di quell'asset nel tuo progetto è diverso: correggilo nella costante corrispondente.
-
-## Giocare nella stanza con Bot2
-
-Lo script ora aggiunge anche un **PlayerStart** vicino alla porta e imposta nei World Settings la GameMode `PlatformerGameMode` (classe C++ del progetto, vedi `Docs/GD13_platformer.md`), che usa **BP_Bot2** come personaggio. Quindi, dopo averlo generato, basta premere **Play** e si cammina nella stanza con Bot2.
-
-- Il progetto va **compilato** prima, altrimenti la GameMode C++ non esiste (lo script lo segnala nella Output Log e chiede di impostarla a mano).
-- Se hai già il livello `L_GD14_StanzaLuci` e lo hai modificato a mano, **non rilanciare** `costruisci()` (lo ricrea da zero). Nel Python della Output Log scrivi invece:
-
-  ```python
-  import gd14_stanza_luci; gd14_stanza_luci.rendi_giocabile()
-  ```
-
-  Apre il livello, aggiunge il PlayerStart solo se manca, imposta la GameMode e salva, senza toccare il resto.
-- Il punto di partenza è `PARTENZA_GIOCATORE` (e `PARTENZA_YAW`) in cima allo script, oppure si sposta il PlayerStart nell'editor.
+1. **Verso dei mobili.** Lo script non sa da che lato "guarda" una mesh di Scan Labs. Se le poltrone guardano il muro invece del fuoco, cambiare `FRONTE_SCANLABS` in cima allo script (0, 90, 180 o 270) e rilanciare, oppure ruotarle a mano.
+2. **Esposizione.** Con Lumen e l'esposizione automatica l'interno può venire più chiaro o più scuro del previsto: regolare `auto_exposure_bias` nel `PostProcess_Stanza`, oppure `FUOCO_CD` / `LUNA_LUX` in cima allo script.
+3. **Lampada a sospensione.** Se la mesh ha un cavo molto lungo lo script la rimpicciolisce per tenerla sopra il tavolo; se non convince, spostarla a mano (e la sua luce con lei).
+4. Se nella Output Log compare `asset mancante`, quel percorso nel vostro progetto è diverso: correggerlo nella costante.
 
 ## Gli screenshot
 
-Nel livello ci sono tre CineCamera, nella cartella `Telecamere`:
+Quattro CineCamera nella cartella `Camere`:
 
-- `Cam_1_Insieme`: tutta la stanza, dall'angolo sud-est verso la finestra;
-- `Cam_2_AngoloLettura`: la poltrona, la lampada e le strisce di sole;
-- `Cam_3_LibreriaEPorta`: la libreria rafforzata e la porta con il corridoio freddo.
+- `Cam_1_Insieme`: dall'angolo della cucina verso il camino, tutta la stanza con tavolo, tappeto e poltrone;
+- `Cam_2_Camino`: il fuoco, la mensola con le candele, le poltrone ai lati;
+- `Cam_3_Controcampo_Finestra`: dal camino verso la finestra e la porta, caldo in primo piano e freddo sullo sfondo;
+- `Cam_4_AngoloLettura`: la poltrona, la lampada da terra, il tavolino con il libro aperto.
 
-Per ciascuna: tasto destro sulla telecamera → **Pilot**, premi **G** per togliere le icone, poi nella Output Log scrivi `HighResShot 2`. Le immagini finiscono in `Saved/Screenshots/`.
+Per ognuna: tasto destro → **Pilot**, **G** per togliere le icone, poi nella Output Log `HighResShot 2`. Le immagini finiscono in `Saved/Screenshots/`.
 
 ## Testo da consegnare insieme agli screenshot
 
-> Ho fatto un piccolo salotto con un angolo lettura, al tramonto. La luce principale è il sole basso che entra dalla finestra a ovest e viene spezzato dai listelli di legno esterni: le strisce di luce e ombra danno ritmo al pavimento e portano lo sguardo verso la libreria. La Sky Light è leggermente azzurra, così le ombre sono fredde e contrastano con il sole caldo. La lampada accanto alla poltrona motiva la luce dell'angolo lettura, ma la point light non è dentro il paralume: è sopra e davanti, verso la poltrona, e la lampada non proietta ombre, come negli esempi di Lies of P. La libreria, che sarebbe in ombra, è rafforzata da una spot light debole senza ombre. Infine una rect light fredda nel corridoio oltre la porta segnala l'uscita e stacca il fondo dell'inquadratura.
+> Ho costruito la soffitta di un rifugio di montagna all'ora blu, quando fuori fa buio e dentro si è appena acceso il fuoco. L'idea di luce è il contrasto caldo/freddo. La luce chiave è il fuoco del camino, che è anche il punto focale: le poltrone e il tappeto sono rivolti verso di lui, e la sua luce tremola con un rumore di Perlin, così le ombre si muovono come con una fiamma vera; una seconda luce senza ombre, morbida, simula il calore che esce dalla bocca del camino. Dalla finestra entra la luna, fredda, che disegna il telaio sul pavimento e, con la nebbia volumetrica, i raggi nell'aria; la Sky Light bassa e blu decide il colore delle ombre. Dalla porta socchiusa entra una lama di luce blu che porta lo sguardo verso l'uscita e racconta che qualcuno è appena rientrato (ci sono le scarpe bagnate e le orme). Le luci pratiche sono motivate: la lampada da terra illumina l'angolo lettura, ma la sua luce è sotto il paralume e la lampada non fa ombra; la lampada a sospensione crea un cerchio di luce sul tavolo da pranzo; due candele accendono la mensola. Infine una spot debole e senza ombre rende leggibili i libri, che il fuoco prende di taglio.

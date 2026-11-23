@@ -9,6 +9,9 @@
 #include "MovingPlatform.generated.h"
 
 class UStaticMeshComponent;
+class UAudioComponent;
+class USoundBase;
+class UMaterialInterface;
 
 UCLASS()
 class AIV_UE5INTRO_API AMovingPlatform : public AActor
@@ -42,6 +45,22 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Piattaforma")
 	FVector PlatformSize = FVector(300.f, 300.f, 30.f);
 
+	/** Materiale della piattaforma (opzionale). */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Piattaforma")
+	TObjectPtr<UMaterialInterface> PlatformMaterial;
+
+	/** UE6: il suono della piattaforma mentre si muove (Sound Cue, opzionale). */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Piattaforma|Audio")
+	TObjectPtr<USoundBase> MoveSound;
+
+	/** UE6: il pitch cambia con la direzione: all'andata... */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Piattaforma|Audio", meta = (ClampMin = "0.1"))
+	float PitchForward = 1.15f;
+
+	/** ...e al ritorno. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Piattaforma|Audio", meta = (ClampMin = "0.1"))
+	float PitchBackward = 0.85f;
+
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Piattaforma")
 	void ApplyPlatformSize();
 
@@ -55,6 +74,12 @@ protected:
 	TObjectPtr<UStaticMeshComponent> Mesh;
 
 private:
+	void UpdateSound(int32 Phase);
+
+	UPROPERTY()
+	TObjectPtr<UAudioComponent> Audio;
+
+	int32 LastPhase = -1;
 	FVector StartLocation = FVector::ZeroVector;
 	float Clock = 0.f;
 };

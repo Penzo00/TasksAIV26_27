@@ -9,6 +9,9 @@
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "TimerManager.h"
+#include "Kismet/GameplayStatics.h"
+#include "GameFramework/DamageType.h"
+#include "Activable.h"
 
 // ---------------------------------------------------------------------
 // AKillZone
@@ -50,14 +53,14 @@ void ADamageZone::DealDamage()
 		GetWorldTimerManager().ClearTimer(DamageHandle);
 		return;
 	}
-	if (UPlatformerHealthComponent* Health = UPlatformerHealthComponent::FindOrAdd(Target))
+	UPlatformerHealthComponent* Health = UPlatformerHealthComponent::FindOrAdd(Target);
+	// UE11: Apply Damage. Lo ricevono sia il nostro componente vita sia l'Event
+	// AnyDamage di BP_Bot2 (che aggiorna la sua barra della vita).
+	UGameplayStatics::ApplyDamage(Target, DamagePerHit, nullptr, this, UDamageType::StaticClass());
+	if (Health && GEngine)
 	{
-		Health->ApplyDamage(DamagePerHit);
-		if (GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(1401, 1.f, FColor::Orange,
-				FString::Printf(TEXT("Vita: %.0f / %.0f"), Health->GetHealth(), Health->MaxHealth));
-		}
+		GEngine->AddOnScreenDebugMessage(1401, 1.f, FColor::Orange,
+			FString::Printf(TEXT("Vita: %.0f / %.0f"), Health->GetHealth(), Health->MaxHealth));
 	}
 }
 
@@ -87,6 +90,10 @@ void AModifierZone::OnCharacterEntered(ACharacter* Character)
 		SavedWalkSpeed = Move->MaxWalkSpeed;
 		SavedJumpZ = Move->JumpZVelocity;
 		SavedGravity = Move->GravityScale;
+		SavedFriction = Move->GroundFriction;
+		SavedBraking = Move->BrakingDecelerationWalking;
+		Move->GroundFriction = SavedFriction * GroundFrictionMultiplier;
+		Move->BrakingDecelerationWalking = SavedBraking * BrakingMultiplier;
 		Move->MaxWalkSpeed = SavedWalkSpeed * WalkSpeedMultiplier;
 		Move->JumpZVelocity = SavedJumpZ * JumpMultiplier;
 		Move->GravityScale = SavedGravity * GravityMultiplier;
@@ -125,6 +132,8 @@ void AModifierZone::Restore()
 			Move->MaxWalkSpeed = SavedWalkSpeed;
 			Move->JumpZVelocity = SavedJumpZ;
 			Move->GravityScale = SavedGravity;
+			Move->GroundFriction = SavedFriction;
+			Move->BrakingDecelerationWalking = SavedBraking;
 		}
 	}
 	bApplied = false;
@@ -148,7 +157,12 @@ void ALevelGoal::OnCharacterEntered(ACharacter* Character)
 		return;
 	}
 	bReached = true;
-	// arrivati: si ferma l'eventuale timer del livello
+	// arrivati: si "incassano" le monete, si registra il tempo e si salva (GD16)
+	if (UPlatformerRunSubsystem* Run = UPlatformerRunSubsystem::Get(this))
+	{
+		Run->CompleteLevel();
+	}
+	// e si ferma l'eventuale timer del livello
 	for (TActorIterator<ALevelTimer> It(GetWorld()); It; ++It)
 	{
 		It->StopTimer();
@@ -186,4 +200,64 @@ void ALevelGoal::OpenNext()
 	{
 		Run->GoToLevel(NextLevel);
 	}
+}
+
+// ---------------------------------------------------------------------
+// ATeleportZone
+// ---------------------------------------------------------------------
+
+void ATeleportZone::OnCharacterEntered(ACharacter* Character)
+{
+	const FVector Target = GetActorTransform().TransformPosition(Destination);
+	Character->TeleportTo(Target, Character->GetActorRotation());
+	if (bStopVelocity)
+	{
+		if (UCharacterMovementComponent* Move = Character->GetCharacterMovement())
+		{
+			Move->StopMovementImmediately();
+		}
+	}
+}
+
+// ---------------------------------------------------------------------
+// AShopZone
+// ---------------------------------------------------------------------
+
+void AShopZone::BeginPlay()
+{
+	Super::BeginPlay();
+	if (Label.IsEmpty())
+	{
+		Label = FText::FromString(FString::Printf(TEXT("Servono %d monete"), Cost));
+		ApplyZoneSettings();
+	}
+}
+
+void AShopZone::OnCharacterEntered(ACharacter* Character)
+{
+	if (bPaid && bOnlyOnce)
+	{
+		return;
+	}
+	UPlatformerRunSubsystem* Run = UPlatformerRunSubsystem::Get(this);
+	if (!Run)
+	{
+		return;
+	}
+	if (!Run->SpendCoins(Cost))
+	{
+		Run->PushMessage(FString::Printf(TEXT("Ti servono %d monete (ne hai %d)"), Cost, Run->GetVisibleCoins()),
+			FLinearColor(1.f, 0.6f, 0.2f));
+		return;
+	}
+	bPaid = true;
+	Run->PushMessage(FString::Printf(TEXT("Pagato: %d monete"), Cost), FLinearColor(1.f, 0.85f, 0.2f));
+	for (AActivable* Target : Targets)
+	{
+		if (Target)
+		{
+			Target->SetActive(true);
+		}
+	}
+	LabelText->SetText(FText::FromString(TEXT("Aperto!")));
 }

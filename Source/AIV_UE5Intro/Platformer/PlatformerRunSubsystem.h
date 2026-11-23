@@ -1,6 +1,8 @@
-// GD13 - Lo stato della "partita" che sopravvive ai cambi di livello.
+// GD13/GD16 - Lo stato della "partita" che sopravvive ai cambi di livello.
 // È un sottosistema della Game Instance: esiste finché il gioco è aperto,
 // come la Game Instance della lezione, ma non obbliga a cambiare GI_Platform.
+// Tiene: morti, monete (con il "conto" del livello in corso), abilità
+// sbloccate, tempi migliori. Salva e carica tutto con una Save Game.
 
 #pragma once
 
@@ -8,14 +10,32 @@
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "PlatformerRunSubsystem.generated.h"
 
+class UPlatformerSaveGame;
+
+/** Le abilità che si possono sbloccare nei livelli. */
+UENUM(BlueprintType)
+enum class EPlatformerAbility : uint8
+{
+	DoubleJump UMETA(DisplayName = "Doppio salto"),
+	WallRun    UMETA(DisplayName = "Wall run e wall jump")
+};
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlatformerAbilityUnlocked, EPlatformerAbility, Ability);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlatformerCoinsChanged, int32, VisibleCoins);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPlatformerMessage, const FString&, Message, FLinearColor, Color);
+
 UCLASS()
 class AIV_UE5INTRO_API UPlatformerRunSubsystem : public UGameInstanceSubsystem
 {
 	GENERATED_BODY()
 
 public:
+	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+
 	/** Comodità: trova il sottosistema partendo da qualunque oggetto nel mondo. */
 	static UPlatformerRunSubsystem* Get(const UObject* WorldContext);
+
+	// ---------------------------------------------------------------- livelli
 
 	/** Conta una morte e fa ripartire il livello corrente dopo Delay secondi. */
 	UFUNCTION(BlueprintCallable, Category = "Platformer")
@@ -29,14 +49,92 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Platformer")
 	void GoToLevel(FName LevelName);
 
+	/** Chiamato dal traguardo: "incassa" le monete del livello, registra il tempo e salva. */
+	UFUNCTION(BlueprintCallable, Category = "Platformer")
+	void CompleteLevel();
+
+	/** Lo chiama la GameMode a ogni inizio livello: azzera il conto del livello e il cronometro. */
+	void NotifyLevelStarted(UWorld* World);
+
+	/** Secondi passati dall'inizio del livello (si ferma al traguardo). */
+	UFUNCTION(BlueprintPure, Category = "Platformer")
+	float GetLevelElapsedTime() const;
+
+	/** Miglior tempo del livello corrente (0 = nessuno). */
+	UFUNCTION(BlueprintPure, Category = "Platformer")
+	float GetBestTimeForCurrentLevel() const;
+
 	UFUNCTION(BlueprintPure, Category = "Platformer")
 	int32 GetDeathCount() const { return DeathCount; }
 
 	UFUNCTION(BlueprintCallable, Category = "Platformer")
 	void ResetDeathCount() { DeathCount = 0; }
 
+	// ---------------------------------------------------------------- monete
+
+	/** Aggiunge monete al conto del livello in corso (diventano tue al traguardo). */
+	UFUNCTION(BlueprintCallable, Category = "Platformer|Monete")
+	void AddPendingCoins(int32 Amount);
+
+	/** Spende monete: prima quelle del livello, poi quelle in banca. Falso se non bastano. */
+	UFUNCTION(BlueprintCallable, Category = "Platformer|Monete")
+	bool SpendCoins(int32 Amount);
+
+	/** Monete in banca + monete raccolte nel livello in corso. */
+	UFUNCTION(BlueprintPure, Category = "Platformer|Monete")
+	int32 GetVisibleCoins() const { return BankedCoins + PendingCoins; }
+
+	UFUNCTION(BlueprintPure, Category = "Platformer|Monete")
+	int32 GetPendingCoins() const { return PendingCoins; }
+
+	// ---------------------------------------------------------------- abilità
+
+	UFUNCTION(BlueprintPure, Category = "Platformer|Abilita")
+	bool HasAbility(EPlatformerAbility Ability) const;
+
+	/** Sblocca un'abilità e salva subito (non si perde morendo). */
+	UFUNCTION(BlueprintCallable, Category = "Platformer|Abilita")
+	void UnlockAbility(EPlatformerAbility Ability);
+
+	// ---------------------------------------------------------------- salvataggio
+
+	UFUNCTION(BlueprintCallable, Category = "Platformer|Salvataggio")
+	void SaveProgress();
+
+	/** Cancella il salvataggio e riparte da zero (comando da console: AIVResetProgress). */
+	UFUNCTION(BlueprintCallable, Category = "Platformer|Salvataggio")
+	void ResetProgress();
+
+	/** Messaggio a schermo per l'HUD (per esempio "Doppio salto sbloccato!"). */
+	UFUNCTION(BlueprintCallable, Category = "Platformer")
+	void PushMessage(const FString& Message, FLinearColor Color = FLinearColor::White);
+
+	UPROPERTY(BlueprintAssignable, Category = "Platformer")
+	FOnPlatformerAbilityUnlocked OnAbilityUnlocked;
+
+	UPROPERTY(BlueprintAssignable, Category = "Platformer")
+	FOnPlatformerCoinsChanged OnCoinsChanged;
+
+	UPROPERTY(BlueprintAssignable, Category = "Platformer")
+	FOnPlatformerMessage OnMessage;
+
+	/** Nome dello slot di salvataggio. */
+	static const FString SaveSlotName;
+
+	static FName AbilityToName(EPlatformerAbility Ability);
+
 private:
+	void LoadOrCreateSave();
+	FName CurrentLevelKey() const;
+
+	UPROPERTY()
+	TObjectPtr<UPlatformerSaveGame> Save;
+
 	int32 DeathCount = 0;
+	int32 BankedCoins = 0;
+	int32 PendingCoins = 0;
+	double LevelStartTime = 0.0;
+	double LevelEndTime = -1.0;
 	bool bRestartPending = false;
 	FTimerHandle RestartHandle;
 };
