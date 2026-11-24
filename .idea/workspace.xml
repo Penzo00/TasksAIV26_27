@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="ALL" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="f8b5ebbc-9305-4e7b-83d5-5b72c0a71c2f" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Abilita.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Abilita.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Acceso.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Acceso.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Acqua.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Acqua.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_AloneFuoco.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_AloneFuoco.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Assi.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Assi.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Braci.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Braci.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Bruciatura.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Bruciatura.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Erba.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Erba.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Ferro.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Ferro.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Fiamma.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Fiamma.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Fuliggine.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Fuliggine.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Ghiaccio.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Ghiaccio.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Intonaco.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Intonaco.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_IntonacoArancio.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_IntonacoArancio.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_IntonacoChiaro.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_IntonacoChiaro.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Lava.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Lava.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_LegnoChiaro.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_LegnoChiaro.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_LegnoDipinto.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_LegnoDipinto.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_LegnoScuro.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_LegnoScuro.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_LegnoViola.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_LegnoViola.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_LuceCalda.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_LuceCalda.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Mattoni.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Mattoni.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_MattoniScuri.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_MattoniScuri.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Moneta.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Moneta.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Muro.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Muro.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Ottone.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Ottone.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Percorso.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Percorso.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_PercorsoScuro.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_PercorsoScuro.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Pericolo.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Pericolo.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Perline.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Perline.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Piastrelle.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Piastrelle.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Pietra.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Pietra.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Pozza.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Pozza.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Prato.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Prato.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Proiettile.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Proiettile.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Rattan.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Rattan.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Salto.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Salto.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Spento.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Spento.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_TessutoBlu.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_TessutoBlu.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_TessutoGiallo.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_TessutoGiallo.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_TessutoOcra.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_TessutoOcra.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_TessutoRosso.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_TessutoRosso.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_TessutoVerde.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_TessutoVerde.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Torretta.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Torretta.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Traguardo.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Traguardo.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Travi.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Travi.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Vita.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/MI_AIV_Vita.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/M_AIV_Colore.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/M_AIV_Colore.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/M_AIV_Decal.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/M_AIV_Decal.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/M_AIV_Lava.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/M_AIV_Lava.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/M_AIV_Mattoni.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/M_AIV_Mattoni.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/AIV/Materiali/M_AIV_Triplanare.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/AIV/Materiali/M_AIV_Triplanare.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Python/gd14_stanza_luci.py" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Python/gd14_stanza_luci.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 6,
+  "fromUser": false
+}]]></component>
+  <component name="ProjectId" id="3MYF3QvcgMfHJ4XDLsEAZoarbrC" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "git-widget-placeholder": "main",
+    "ignore.virus.scanning.warn.message": "true",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "python.packages.toolwindow.project.migrated.to.right.top.v2": "true"
+  }
+}]]></component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-56aff7b04f6f-JavaScript-PY-263.7307.329" />
+        <option value="bundled-python-sdk-9e1d95ea72ba-e0583fc556d1-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-263.7307.329" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="f8b5ebbc-9305-4e7b-83d5-5b72c0a71c2f" name="Changes" comment="" />
+      <created>1795519395640</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1795519395640</updated>
+      <workItem from="1795519397638" duration="1130000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>

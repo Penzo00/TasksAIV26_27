@@ -768,7 +768,7 @@ def costruisci_luci():
 
     # 8) RIEMPIMENTO SULLA LIBRERIA - spot debole senza ombre: rende leggibili
     #    i dorsi dei libri, che il fuoco prende di taglio.
-    a.luce_spot("Libreria_Riempimento_SenzaOmbre", (260, W - 230, 330), -40.0, 90.0, intensita=LIBRI_CD,
+    a.luce_spot("Libreria_Riempimento_SenzaOmbre", (370, W - 230, 330), -40.0, 90.0, intensita=LIBRI_CD,
                          temperatura=3200.0, raggio=500.0, cono_esterno=45.0, cono_interno=25.0, sorgente=40.0,
                          ombre=False, cartella="Luci/Riempimento")
 
