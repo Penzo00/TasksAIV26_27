@@ -222,6 +222,24 @@ void UPlatformerRunSubsystem::OpenFirstLevel()
 	GoToLevel(FirstLevel);
 }
 
+void UPlatformerRunSubsystem::StartMode(bool bBlueprints, FName FirstLevelOfMode)
+{
+	bBlueprintMode = bBlueprints;
+	if (!FirstLevelOfMode.IsNone())
+	{
+		FirstLevel = FirstLevelOfMode;   // il game over riporta al primo livello DELLA MODALITÀ scelta
+	}
+	PendingCoins = 0;
+	DeathCount = 0;
+	GoToLevel(FirstLevel);
+}
+
+void UPlatformerRunSubsystem::GoToMenu()
+{
+	PendingCoins = 0;   // le monete del livello lasciato a metà non si incassano
+	GoToLevel(MenuLevel);
+}
+
 void UPlatformerRunSubsystem::CompleteLevel()
 {
 	const UWorld* World = GetGameInstance() ? GetGameInstance()->GetWorld() : nullptr;

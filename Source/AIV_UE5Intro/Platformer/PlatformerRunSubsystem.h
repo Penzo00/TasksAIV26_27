@@ -99,6 +99,24 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Platformer|Vite")
 	void GameOver();
 
+	// ---------------------------------------------------------------- menu e modalità
+
+	/** Il livello del menu di scelta della modalità (C++ o Blueprints). */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Platformer|Menu")
+	FName MenuLevel = FName(TEXT("L_GD13_Menu"));
+
+	/** Vero se si sta giocando la versione Blueprint dei livelli (scelta nel menu). */
+	UFUNCTION(BlueprintPure, Category = "Platformer|Menu")
+	bool IsBlueprintMode() const { return bBlueprintMode; }
+
+	/** Chiamato dal menu: ricorda la modalità, imposta il primo livello e lo apre. */
+	UFUNCTION(BlueprintCallable, Category = "Platformer|Menu")
+	void StartMode(bool bBlueprints, FName FirstLevelOfMode);
+
+	/** Torna al menu di scelta della modalità (tasto M nei livelli C++). */
+	UFUNCTION(BlueprintCallable, Category = "Platformer|Menu")
+	void GoToMenu();
+
 	// ---------------------------------------------------------------- monete
 
 	/** Aggiunge monete al conto del livello in corso (diventano tue al traguardo). */
@@ -168,5 +186,6 @@ private:
 	double LevelStartTime = 0.0;
 	double LevelEndTime = -1.0;
 	bool bRestartPending = false;
+	bool bBlueprintMode = false;
 	FTimerHandle RestartHandle;
 };

@@ -1,0 +1,477 @@
+%% generato da strumenti/estrai_livelli.py: non modificare a mano
+\subsection{\texttt{BP\_Zona}}\label{bp:BP_Zona}
+\noindent Rifà \texttt{APlatformerZone} (\texttt{PlatformerZone.h}). Classe padre: \nodo{Actor}.\par
+\smallskip\noindent\textbf{Componenti.} \nodo{Box Collision} \var{Trigger} (root; Collision Preset \emph{Trigger}), \nodo{Static Mesh} \var{Visual} (un \var{Cube}, senza collisione), \nodo{Text Render} \var{Scritta}.\par
+\noindent\textbf{Origine (pivot).} il \textbf{centro} della scatola. Nel \nodo{Construction Script}: \nodo{Set Box Extent} = \var{ZoneExtent}; \var{Visual} con scala $(\mathrm{ZoneExtent.X}/50;\ \mathrm{ZoneExtent.Y}/50;\ \mathrm{VisualThickness}/100)$ e Z relativa $-\mathrm{ZoneExtent.Z}+\mathrm{VisualThickness}/2$ (sta sul fondo); \nodo{Set Visibility} di \var{Visual} = \var{ShowVisual}; la scritta a Z $\mathrm{ZoneExtent.Z}+20$.\par
+\smallskip\noindent\textbf{Variabili} (tutte \emph{Instance Editable}):
+\begin{variabili}
+ZoneExtent & Vector & (150, 150, 100) & Metà delle dimensioni della zona, in cm (come la Box Extent di un Box Collision). \\
+OnlyPlayer & Boolean & sì & Se vero, reagisce solo al personaggio del giocatore (non ad altri actor). \\
+ShowVisual & Boolean & sì & Mostra una pedana sul fondo della zona, così la si vede anche in gioco. \\
+VisualThickness & Float & 4 & Spessore della pedana visibile sul fondo della zona, in cm. \\
+VisualMaterial & MaterialInterface (riferimento) &  & Materiale della pedana visibile (opzionale). \\
+Label & Text &  & Scritta sopra la zona (vuota = nessuna scritta). \\
+\end{variabili}
+\smallskip\noindent\textbf{Logica.} filtra il giocatore e chiama gli eventi vuoti \var{Entra}/\var{Esce} che i figli riempiono (Ninja, cap.~10).\par
+
+\subsection{\texttt{BP\_Pickup}}\label{bp:BP_Pickup}
+\noindent Rifà \texttt{APlatformerPickup} (\texttt{PlatformerPickups.h}). Classe padre: \nodo{Actor}.\par
+\smallskip\noindent\textbf{Componenti.} \nodo{Sphere Collision} \var{Sfera} (root, raggio \var{PickupRadius}), \nodo{Static Mesh} \var{Mesh} (senza collisione), \nodo{Point Light} \var{Luce} (intensità \var{GlowIntensity}, colore \var{GlowColor}, raggio 200), \nodo{Text Render} \var{Scritta} a Z 90.\par
+\noindent\textbf{Origine (pivot).} il \textbf{centro} dell'oggetto (che gira e ondeggia intorno a quel punto).\par
+\smallskip\noindent\textbf{Variabili} (tutte \emph{Instance Editable}):
+\begin{variabili}
+SpinSpeed & Float & 120 & Gradi al secondo di rotazione. \\
+BobHeight & Float & 12 & Ampiezza dell'ondeggiamento verticale (cm). \\
+BobSpeed & Float & 0.8 & Velocità dell'ondeggiamento (cicli al secondo). \\
+PickupRadius & Float & 60 & Raggio di raccolta (cm). \\
+Material & MaterialInterface (riferimento) &  &  \\
+GlowIntensity & Float & 8 & Luce piccola che fa "brillare" l'oggetto e lo fa notare (0 = spenta). \\
+GlowColor & Linear Color & (1, 0.8, 0.3) &  \\
+PickupSound & SoundBase (riferimento) &  &  \\
+Label & Text &  & Scritta sopra l'oggetto (vuota = nessuna). \\
+\end{variabili}
+\smallskip\noindent\textbf{Logica.} gira e ondeggia nel Tick; all'overlap chiama \var{Raccolto} e, se torna vero, suono e \nodo{Destroy Actor} (Ninja, cap.~11).\par
+
+\subsection{\texttt{BP\_Interruttore}}\label{bp:BP_Interruttore}
+\noindent Rifà \texttt{ASwitchBase} (\texttt{Switches.h}). Classe padre: \nodo{Actor}.\par
+\smallskip\noindent\textbf{Componenti.} dipendono dal figlio (piastra o leva).\par
+\smallskip\noindent\textbf{Variabili} (tutte \emph{Instance Editable}):
+\begin{variabili}
+Targets & Array di Activable &  & Gli attivabili da chiamare (primo metodo: For Each Loop sull'array). \\
+ClickSound & SoundBase (riferimento) &  & Suono quando cambia stato (opzionale). \\
+OnMaterial & MaterialInterface (riferimento) &  & Materiale "acceso" e "spento" della parte che si muove (opzionali). \\
+OffMaterial & MaterialInterface (riferimento) &  &  \\
+\end{variabili}
+\smallskip\noindent\textbf{Logica.} \var{ImpostaStato}: chiama \var{Attiva}/\var{Disattiva} dell'interfaccia \var{BPI\_Attivabile} su ogni elemento di \var{Targets} e lancia il dispatcher \var{OnCambiato} (Ninja, cap.~9).\par
+
+\subsection{\texttt{BP\_Attivabile}}\label{bp:BP_Attivabile}
+\noindent Rifà \texttt{AActivable} (\texttt{Activable.h}). Classe padre: \nodo{Actor}.\par
+\smallskip\noindent\textbf{Componenti.} una \nodo{Scene} \var{Root}; il resto lo aggiunge il figlio. Implementa l'interfaccia \var{BPI\_Attivabile}.\par
+\smallskip\noindent\textbf{Variabili} (tutte \emph{Instance Editable}):
+\begin{variabili}
+StartActive & Boolean & no & Stato all'avvio. \\
+ListenTo & Array di SwitchBase &  & Interruttori di cui ascoltare l'event dispatcher (secondo metodo della lezione). \\
+TransitionTime & Float & 1 & Secondi della "timeline" di attivazione (porta che si apre, piattaforma che sale...). \\
+TransitionCurve & CurveFloat (riferimento) &  & Curva della timeline (opzionale): senza curva il movimento è morbido (ease in/out). \\
+ActivateSound & SoundBase (riferimento) &  & Suono all'attivazione (opzionale). \\
+\end{variabili}
+\smallskip\noindent\textbf{Logica.} \var{Attiva} $\rightarrow$ timeline lunga \var{TransitionTime} in avanti, \var{Disattiva} $\rightarrow$ indietro; l'\emph{Update} chiama la funzione vuota \var{Applica(Alpha)} che i figli ridefiniscono. In BeginPlay: per ogni interruttore in \var{ListenTo}, \nodo{Bind Event to OnCambiato}. Se \var{StartActive}, parte già attivo (Ninja, cap.~9).\par
+
+\subsection{\texttt{BP\_ZonaCaduta}}\label{bp:BP_ZonaCaduta}
+\noindent Rifà \texttt{AFallZone} (\texttt{PlatformerZones.h}). Classe padre: \nodo{BP\_Zona}.\par
+\noindent In più eredita le variabili di \texttt{BP\_Zona} (sezione~\ref{bp:BP_Zona}).\par
+\smallskip\noindent\textbf{Logica.} \var{Entra} $\rightarrow$ \var{GestisciCaduta} del componente \var{AC\_PostoSicuro}: perde una vita e torna all'ultimo posto sicuro; a zero vite, game over (Ninja, cap.~5). Nei livelli è invisibile (\var{ShowVisual} = no).\par
+
+\subsection{\texttt{BP\_ZonaMortale}}\label{bp:BP_ZonaMortale}
+\noindent Rifà \texttt{AKillZone} (\texttt{PlatformerZones.h}). Classe padre: \nodo{BP\_Zona}.\par
+\smallskip\noindent\textbf{Variabili} (tutte \emph{Instance Editable}):
+\begin{variabili}
+RestartDelay & Float & 0.3 & Secondi prima che il livello riparta. \\
+\end{variabili}
+\noindent In più eredita le variabili di \texttt{BP\_Zona} (sezione~\ref{bp:BP_Zona}).\par
+\smallskip\noindent\textbf{Logica.} \var{Entra} $\rightarrow$ \var{UccidiERiavvia}(\var{RestartDelay}) (Ninja, cap.~8).\par
+
+\subsection{\texttt{BP\_ZonaDanno}}\label{bp:BP_ZonaDanno}
+\noindent Rifà \texttt{ADamageZone} (\texttt{PlatformerZones.h}). Classe padre: \nodo{BP\_Zona}.\par
+\smallskip\noindent\textbf{Variabili} (tutte \emph{Instance Editable}):
+\begin{variabili}
+DamagePerHit & Float & 20 & Danno inflitto a ogni "colpo". \\
+HitInterval & Float & 0.5 & Secondi tra un colpo e l'altro, finché si resta nella zona. \\
+\end{variabili}
+\noindent In più eredita le variabili di \texttt{BP\_Zona} (sezione~\ref{bp:BP_Zona}).\par
+\smallskip\noindent\textbf{Logica.} timer ripetuto ogni \var{HitInterval} che fa \nodo{Apply Damage} di \var{DamagePerHit} finché si è dentro (Ninja, cap.~8, la lava).\par
+
+\subsection{\texttt{BP\_ZonaModificatore}}\label{bp:BP_ZonaModificatore}
+\noindent Rifà \texttt{AModifierZone} (\texttt{PlatformerZones.h}). Classe padre: \nodo{BP\_Zona}.\par
+\smallskip\noindent\textbf{Variabili} (tutte \emph{Instance Editable}):
+\begin{variabili}
+WalkSpeedMultiplier & Float & 1 & Moltiplica la velocità di camminata (1 = invariata). \\
+JumpMultiplier & Float & 1 & Moltiplica la forza del salto (1 = invariata). \\
+GravityMultiplier & Float & 1 & Moltiplica la gravità (meno di 1 = salti "lunari"). \\
+GroundFrictionMultiplier & Float & 1 & Moltiplica l'attrito a terra (Ground Friction). Meno di 1 = si scivola: il ghiaccio. \\
+BrakingMultiplier & Float & 1 & Moltiplica la frenata (Braking Deceleration Walking). Meno di 1 = ci si ferma tardi. \\
+DurationAfterExit & Float & 3 & Quanto dura l'effetto dopo essere USCITI dalla zona, in secondi. 0 = finisce appena si esce. Negativo = dura per tutto il livello. \\
+\end{variabili}
+\noindent In più eredita le variabili di \texttt{BP\_Zona} (sezione~\ref{bp:BP_Zona}).\par
+\smallskip\noindent\textbf{Logica.} all'ingresso salva e moltiplica velocità, salto, gravità, attrito e frenata del Character Movement; all'uscita li ripristina dopo \var{DurationAfterExit} secondi (Ninja, cap.~10).\par
+
+\subsection{\texttt{BP\_Teletrasporto}}\label{bp:BP_Teletrasporto}
+\noindent Rifà \texttt{ATeleportZone} (\texttt{PlatformerZones.h}). Classe padre: \nodo{BP\_Zona}.\par
+\smallskip\noindent\textbf{Variabili} (tutte \emph{Instance Editable}):
+\begin{variabili}
+Destination & Vector & (500, 0, 100) & Punto di arrivo, relativo alla zona (si trascina nel viewport con il rombo). \\
+StopVelocity & Boolean & sì & Se vero, all'arrivo si azzera la velocità. \\
+\end{variabili}
+\noindent In più eredita le variabili di \texttt{BP\_Zona} (sezione~\ref{bp:BP_Zona}).\par
+\smallskip\noindent\textbf{Logica.} \nodo{Teleport} dell'eroe in \nodo{Transform Location}(\var{Destination}) (la destinazione è \emph{relativa} alla zona: spuntate \emph{Show 3D Widget} sulla variabile per trascinarla nel viewport); se \var{StopVelocity}, velocità a zero (Ninja, cap.~10).\par
+
+\subsection{\texttt{BP\_Negozio}}\label{bp:BP_Negozio}
+\noindent Rifà \texttt{AShopZone} (\texttt{PlatformerZones.h}). Classe padre: \nodo{BP\_Zona}.\par
+\smallskip\noindent\textbf{Variabili} (tutte \emph{Instance Editable}):
+\begin{variabili}
+Cost & Integer & 5 & Monete richieste. \\
+Targets & Array di Activable &  & Cosa si attiva pagando (porte, piattaforme, luci...). \\
+OnlyOnce & Boolean & sì & Se vero, si paga una volta sola. \\
+\end{variabili}
+\noindent In più eredita le variabili di \texttt{BP\_Zona} (sezione~\ref{bp:BP_Zona}).\par
+\smallskip\noindent\textbf{Logica.} se le monete bastano, le toglie (\var{Cost}) e chiama \var{Attiva} su ogni elemento di \var{Targets}; con \var{OnlyOnce} funziona una volta sola. Altrimenti un messaggio ``Servono N monete'' (Ninja, cap.~10).\par
+
+\subsection{\texttt{BP\_Traguardo}}\label{bp:BP_Traguardo}
+\noindent Rifà \texttt{ALevelGoal} (\texttt{PlatformerZones.h}). Classe padre: \nodo{BP\_Zona}.\par
+\smallskip\noindent\textbf{Variabili} (tutte \emph{Instance Editable}):
+\begin{variabili}
+NextLevel & Name &  & Nome della mappa da aprire, per esempio L\_GD13\_Livello2. \\
+Message & String & Livello completato! & Messaggio a schermo quando si arriva. \\
+Delay & Float & 1 & Secondi prima del cambio di livello. \\
+ResetDeathCount & Boolean & no & Se vero, azzera il contatore delle morti (da usare sull'ultimo traguardo). \\
+\end{variabili}
+\noindent In più eredita le variabili di \texttt{BP\_Zona} (sezione~\ref{bp:BP_Zona}).\par
+\smallskip\noindent\textbf{Logica.} \nodo{Do Once} $\rightarrow$ incassa le monete, registra il tempo, mostra \var{Message}, se \var{ResetDeathCount} azzera le morti, \nodo{Delay} \var{Delay} $\rightarrow$ \var{VaiAlLivello(NextLevel)} (Ninja, cap.~10). Nei livelli \_BP \var{NextLevel} è il livello \_BP successivo; dall'ultimo si torna a \var{L\_GD13\_Menu}.\par
+
+\subsection{\texttt{BP\_TimerLivello}}\label{bp:BP_TimerLivello}
+\noindent Rifà \texttt{ALevelTimer} (\texttt{LevelTimer.h}). Classe padre: \nodo{Actor}.\par
+\smallskip\noindent\textbf{Componenti.} \nodo{Scene} root, \nodo{Text Render} \var{Testo} (World Size 120, centrato).\par
+\noindent\textbf{Origine (pivot).} dove deve stare la scritta del tempo.\par
+\smallskip\noindent\textbf{Variabili} (tutte \emph{Instance Editable}):
+\begin{variabili}
+TimeLimit & Float & 60 & Secondi a disposizione per finire il livello. \\
+WarningThreshold & Float & 10 & Sotto questa soglia il tempo diventa rosso. \\
+ShowOnScreen & Boolean & no & Scrive il tempo anche come messaggio di debug in alto a sinistra (l'HUD lo mostra già). \\
+ShowInWorld & Boolean & sì & Scrive il tempo anche nel mondo, sulla scritta dell'actor (utile se lo si piazza in vista). \\
+\end{variabili}
+\smallskip\noindent\textbf{Logica.} timer ogni 0,1\,s che scala \var{TimeLimit}; sotto \var{WarningThreshold} il testo diventa rosso; a zero, \var{UccidiERiavvia} (Ninja, cap.~10). \var{ShowOnScreen} = mostra il tempo anche nell'HUD.\par
+
+\subsection{\texttt{BP\_Moneta}}\label{bp:BP_Moneta}
+\noindent Rifà \texttt{ACoinPickup} (\texttt{PlatformerPickups.h}). Classe padre: \nodo{BP\_Pickup}.\par
+\smallskip\noindent\textbf{Componenti.} quelli di \var{BP\_Pickup}; la mesh è un \var{Cylinder} schiacciato (scala $0{,}45 \times 0{,}45 \times 0{,}08$) ruotato di 90\textdegree{} in Roll, così la si vede di taglio.\par
+\smallskip\noindent\textbf{Variabili} (tutte \emph{Instance Editable}):
+\begin{variabili}
+Value & Integer & 1 &  \\
+\end{variabili}
+\noindent In più eredita le variabili di \texttt{BP\_Pickup} (sezione~\ref{bp:BP_Pickup}).\par
+\smallskip\noindent\textbf{Logica.} \var{Raccolto}: \var{GI.Monete} += \var{Value}, ritorna vero (Ninja, cap.~11).\par
+
+\subsection{\texttt{BP\_PickupAbilita}}\label{bp:BP_PickupAbilita}
+\noindent Rifà \texttt{AAbilityPickup} (\texttt{PlatformerPickups.h}). Classe padre: \nodo{BP\_Pickup}.\par
+\smallskip\noindent\textbf{Componenti.} quelli di \var{BP\_Pickup}; mesh \var{Sphere} scala 0,4.\par
+\smallskip\noindent\textbf{Variabili} (tutte \emph{Instance Editable}):
+\begin{variabili}
+Ability & E\_Abilita & DoubleJump &  \\
+Message & String & Doppio salto sbloccato! Premi salto di nuovo in aria & Messaggio a schermo quando la si prende. \\
+HideIfAlreadyUnlocked & Boolean & sì & Se vero, sparisce quando l'abilità è già stata sbloccata (per esempio rigiocando il livello). \\
+\end{variabili}
+\noindent In più eredita le variabili di \texttt{BP\_Pickup} (sezione~\ref{bp:BP_Pickup}).\par
+\smallskip\noindent\textbf{Logica.} \var{Raccolto}: \var{SbloccaAbilita(Ability)}, \var{MostraMessaggio(Message)}. Se \var{HideIfAlreadyUnlocked} e l'abilità c'è già, in BeginPlay si distrugge. Il cartello si scrive da solo nel Construction Script (Ninja, cap.~11).\par
+
+\subsection{\texttt{BP\_PickupSalute}}\label{bp:BP_PickupSalute}
+\noindent Rifà \texttt{AHealthPickup} (\texttt{PlatformerPickups.h}). Classe padre: \nodo{BP\_Pickup}.\par
+\smallskip\noindent\textbf{Componenti.} quelli di \var{BP\_Pickup}; mesh \var{Cylinder} scala $(0{,}6;\ 0{,}6;\ 0{,}9)$, materiale verde.\par
+\smallskip\noindent\textbf{Variabili} (tutte \emph{Instance Editable}):
+\begin{variabili}
+HealAmount & Float & 40 &  \\
+\end{variabili}
+\noindent In più eredita le variabili di \texttt{BP\_Pickup} (sezione~\ref{bp:BP_Pickup}).\par
+\smallskip\noindent\textbf{Logica.} \var{Raccolto}: se la vita non è piena, \nodo{Apply Damage} di $-$\var{HealAmount} all'eroe e ritorna vero; altrimenti falso e resta lì (Ninja, cap.~11).\par
+
+\subsection{\texttt{BP\_PickupBatteria}}\label{bp:BP_PickupBatteria}
+\noindent Rifà \texttt{ABatteryPickup} (\texttt{PlatformerPickups.h}). Classe padre: \nodo{BP\_Pickup}.\par
+\smallskip\noindent\textbf{Componenti.} quelli di \var{BP\_Pickup}; mesh \var{Cylinder} scala $(0{,}25;\ 0{,}25;\ 0{,}45)$.\par
+\smallskip\noindent\textbf{Variabili} (tutte \emph{Instance Editable}):
+\begin{variabili}
+BatterySeconds & Float & 15 & Secondi di luce aggiunti. \\
+\end{variabili}
+\noindent In più eredita le variabili di \texttt{BP\_Pickup} (sezione~\ref{bp:BP_Pickup}).\par
+\smallskip\noindent\textbf{Logica.} \var{Raccolto}: \var{Batteria} della torcia += \var{BatterySeconds} (con \nodo{Min} sul massimo) (Ninja, cap.~4 e 11).\par
+
+\subsection{\texttt{BP\_PiattaformaMobile}}\label{bp:BP_PiattaformaMobile}
+\noindent Rifà \texttt{AMovingPlatform} (\texttt{MovingPlatform.h}). Classe padre: \nodo{Actor}.\par
+\smallskip\noindent\textbf{Componenti.} \nodo{Static Mesh} \var{Mesh} (root, \var{Cube} con scala \var{PlatformSize}/100, collisione \emph{BlockAll}), \nodo{Audio} \var{Suono} (\var{MoveSound}).\par
+\noindent\textbf{Origine (pivot).} il \textbf{centro} della piattaforma (nelle tabelle la Z è già il centro: piano $-$ metà spessore).\par
+\smallskip\noindent\textbf{Variabili} (tutte \emph{Instance Editable}):
+\begin{variabili}
+EndOffset & Vector & (0, 400, 0) & Spostamento del punto di arrivo rispetto alla posizione iniziale (si trascina col widget nel viewport). \\
+TravelTime & Float & 2 & Secondi per andare da un estremo all'altro. \\
+PauseTime & Float & 0.5 & Secondi di sosta a ogni estremo. \\
+StartDelay & Float & 0 & Ritardo iniziale: sfasa piattaforme uguali messe in fila. \\
+Smooth & Boolean & sì & Movimento morbido agli estremi (ease in/out) invece che lineare. \\
+PlatformSize & Vector & (300, 300, 30) & Dimensioni della piattaforma in cm. \\
+PlatformMaterial & MaterialInterface (riferimento) &  & Materiale della piattaforma (opzionale). \\
+MoveSound & SoundBase (riferimento) &  & UE6: il suono della piattaforma mentre si muove (Sound Cue, opzionale). \\
+PitchForward & Float & 1.15 & UE6: il pitch cambia con la direzione: all'andata... \\
+PitchBackward & Float & 0.85 & ...e al ritorno. \\
+\end{variabili}
+\smallskip\noindent\textbf{Logica.} timeline di \var{TravelTime} secondi fra la posizione iniziale e iniziale + \var{EndOffset}, pausa \var{PauseTime} agli estremi, ritardo iniziale \var{StartDelay}; \nodo{Set Pitch Multiplier} del suono a \var{PitchForward} all'andata e \var{PitchBackward} al ritorno (Ninja, cap.~8).\par
+
+\subsection{\texttt{BP\_PiattaformaCrolla}}\label{bp:BP_PiattaformaCrolla}
+\noindent Rifà \texttt{ACrumblingPlatform} (\texttt{PlatformerProps.h}). Classe padre: \nodo{Actor}.\par
+\smallskip\noindent\textbf{Componenti.} \nodo{Static Mesh} \var{Mesh} (root, \var{Cube} scala \var{PlatformSize}/100), \nodo{Box Collision} \var{Sopra} (extent $(\mathrm{X}/2-5;\ \mathrm{Y}/2-5;\ 20)$, a Z $\mathrm{PlatformSize.Z}/2+20$: sente chi ci sale).\par
+\noindent\textbf{Origine (pivot).} il \textbf{centro} della piattaforma.\par
+\smallskip\noindent\textbf{Variabili} (tutte \emph{Instance Editable}):
+\begin{variabili}
+PlatformSize & Vector & (250, 250, 30) &  \\
+ShakeTime & Float & 0.8 & Secondi in cui trema prima di cadere. \\
+ShakeAmount & Float & 4 & Quanto trema (cm). \\
+RespawnTime & Float & 3 & Secondi prima di ricomparire (0 = non ricompare). \\
+PlatformMaterial & MaterialInterface (riferimento) &  &  \\
+WarningMaterial & MaterialInterface (riferimento) &  & Materiale mentre trema (avviso visivo, opzionale). \\
+CrumbleSound & SoundBase (riferimento) &  &  \\
+\end{variabili}
+\smallskip\noindent\textbf{Logica.} qualcuno sale $\rightarrow$ materiale \var{WarningMaterial} e tremolio per \var{ShakeTime} $\rightarrow$ suono, nascosta e senza collisione $\rightarrow$ dopo \var{RespawnTime} torna (Ninja, cap.~8).\par
+
+\subsection{\texttt{BP\_Trampolino}}\label{bp:BP_Trampolino}
+\noindent Rifà \texttt{AJumpPad} (\texttt{PlatformerProps.h}). Classe padre: \nodo{Actor}.\par
+\smallskip\noindent\textbf{Componenti.} \var{Base} (\var{Cylinder} scala $(1{,}4;\ 1{,}4;\ 0{,}2)$), \var{Pad} (\var{Cylinder} scala $(0{,}85;\ 0{,}85;\ 0{,}4)$ a Z 60, materiale \var{PadMaterial}), \nodo{Box Collision} \var{Trigger} extent $(40;\ 40;\ 150)$ a Z 250. \emph{Attenzione}: il trigger sta sopra il pad, così il lancio scatta mentre si passa sopra.\par
+\noindent\textbf{Origine (pivot).} \textbf{a terra}, al centro della base.\par
+\smallskip\noindent\textbf{Variabili} (tutte \emph{Instance Editable}):
+\begin{variabili}
+LaunchVelocity & Vector & (300, 0, 1300) & Velocità data al personaggio, nello spazio dell'actor (X avanti, Z su). cm/s. \\
+OverrideHorizontal & Boolean & sì & Se vero, sostituisce la velocità orizzontale invece di sommarla. \\
+BounceSound & SoundBase (riferimento) &  &  \\
+PadMaterial & MaterialInterface (riferimento) &  &  \\
+\end{variabili}
+\smallskip\noindent\textbf{Logica.} overlap $\rightarrow$ \nodo{Launch Character} con \nodo{Rotate Vector}(\var{LaunchVelocity}, rotazione dell'actor), \emph{XY Override} = \var{OverrideHorizontal}, \emph{Z Override} sì; il pad si schiaccia per un attimo (Ninja, cap.~8).\par
+
+\subsection{\texttt{BP\_BarraRotante}}\label{bp:BP_BarraRotante}
+\noindent Rifà \texttt{ASpinningObstacle} (\texttt{SpinningObstacle.h}). Classe padre: \nodo{Actor}.\par
+\smallskip\noindent\textbf{Componenti.} \var{Base} (\var{Cylinder} scala $(0{,}4;\ 0{,}4;\ \mathrm{BarHeight}/100)$ a Z $\mathrm{BarHeight}/2$), \var{Perno} (Scene), sotto il perno \var{Barra} (\var{Cube} scala \var{BarSize}/100 a Z \var{BarHeight}, collisione \emph{OverlapAllDynamic}: \textbf{non} blocca).\par
+\noindent\textbf{Origine (pivot).} \textbf{a terra}, al centro.\par
+\smallskip\noindent\textbf{Variabili} (tutte \emph{Instance Editable}):
+\begin{variabili}
+DegreesPerSecond & Float & 90 & Gradi al secondo attorno all'asse verticale (negativo = senso opposto). \\
+BarSize & Vector & (600, 30, 30) & Lunghezza, spessore e altezza della sbarra, in cm. \\
+BarHeight & Float & 60 & Altezza della sbarra dal pavimento, in cm. \\
+PushStrength & Float & 900 & Forza con cui la sbarra spinge via il personaggio. \\
+KillOnTouch & Boolean & no & Se vero, toccare la sbarra fa ripartire il livello invece di spingere. \\
+\end{variabili}
+\smallskip\noindent\textbf{Logica.} \nodo{Rotating Movement} sul perno a \var{DegreesPerSecond}; all'overlap della barra: se \var{KillOnTouch} $\rightarrow$ \var{UccidiERiavvia}(0,3), altrimenti \nodo{Launch Character} lontano dal centro con forza \var{PushStrength} (Ninja, cap.~8).\par
+
+\subsection{\texttt{BP\_Torretta}}\label{bp:BP_Torretta}
+\noindent Rifà \texttt{ATurret} (\texttt{Turret.h}). Classe padre: \nodo{Actor}.\par
+\smallskip\noindent\textbf{Componenti.} \var{Base} (\var{Cylinder} scala $(0{,}8;\ 0{,}8;\ 1)$ a Z 50), \var{Testa} (Scene a Z 130) con \var{TestaMesh} (\var{Sphere} 0,75), \var{Canna} (\var{Cylinder} $0{,}22 \times 0{,}22 \times 1$ ruotato in avanti) e \var{Bocca} (Scene a X 110); \nodo{Sphere Collision} \var{Rilevamento} raggio \var{Range}.\par
+\noindent\textbf{Origine (pivot).} \textbf{a terra} sopra la colonna rossa; yaw = verso cui guarda a riposo.\par
+\smallskip\noindent\textbf{Variabili} (tutte \emph{Instance Editable}):
+\begin{variabili}
+Range & Float & 1800 & Raggio d'azione (cm). \\
+FireInterval & Float & 1.4 & Secondi fra un colpo e l'altro. \\
+TurnSpeed & Float & 3 & Velocità di rotazione della testa (RInterp To). \\
+MinPitch & Float & -40 & Clamp del pitch della canna (gradi). \\
+MaxPitch & Float & 30 &  \\
+FireConeDegrees & Float & 12 & Spara solo se la canna è entro questo angolo dal bersaglio (gradi). \\
+AimHeightOffset & Float & -60 & Dove mirare rispetto al centro del personaggio: negativo = ai piedi (cm). \\
+LeadTarget & Boolean & no & Se vero, mira dove il personaggio SARÀ (anticipa il movimento). \\
+ProjectileSpeed & Float & 1500 &  \\
+ProjectileDamage & Float & 25 &  \\
+ProjectileClass & Classe di PlatformerProjectile &  &  \\
+RestartLevelOnHit & Boolean & no & Se vero, un proiettile che colpisce il personaggio fa ripartire il livello. \\
+BodyMaterial & MaterialInterface (riferimento) &  &  \\
+ProjectileMaterial & MaterialInterface (riferimento) &  &  \\
+FireSound & SoundBase (riferimento) &  &  \\
+\end{variabili}
+\smallskip\noindent\textbf{Logica.} Ninja, cap.~8: \nodo{Find Look at Rotation} + \nodo{RInterp To} (\var{TurnSpeed}), pitch fra \var{MinPitch} e \var{MaxPitch}, mira all'altezza del bersaglio + \var{AimHeightOffset}; spara ogni \var{FireInterval} se l'angolo è entro \var{FireConeDegrees} e la vista è libera. Con \var{LeadTarget} mira dove il giocatore \emph{sarà}: posizione + velocità $\times$ (distanza / \var{ProjectileSpeed}). Ai proiettili passa \var{ProjectileSpeed}, \var{ProjectileDamage} e \var{RestartLevelOnHit}.\par
+
+\subsection{\texttt{BP\_PiastraPressione}}\label{bp:BP_PiastraPressione}
+\noindent Rifà \texttt{APressurePlate} (\texttt{Switches.h}). Classe padre: \nodo{BP\_Interruttore}.\par
+\smallskip\noindent\textbf{Componenti.} \var{Cornice} (\var{Cube} scala $(1{,}6;\ 1{,}6;\ 0{,}08)$ a Z 4), \var{Piastra} (\var{Cube} $(1{,}3;\ 1{,}3;\ 0{,}1)$ a Z 10), \nodo{Box Collision} extent $(65;\ 65;\ 40)$ a Z 40.\par
+\noindent\textbf{Origine (pivot).} \textbf{a terra}, al centro.\par
+\smallskip\noindent\textbf{Variabili} (tutte \emph{Instance Editable}):
+\begin{variabili}
+StayPressed & Boolean & sì & Se vero, resta premuto anche dopo che si scende. \\
+PressDepth & Float & 8 & Quanto si abbassa la pedana (cm). \\
+PressTime & Float & 0.25 & Secondi della "timeline" di discesa. \\
+\end{variabili}
+\noindent In più eredita le variabili di \texttt{BP\_Interruttore} (sezione~\ref{bp:BP_Interruttore}).\par
+\smallskip\noindent\textbf{Logica.} un Character entra $\rightarrow$ \var{ImpostaStato}(vero), piastra giù di \var{PressDepth} in \var{PressTime}, materiale \var{OnMaterial}; se \var{StayPressed} è no, quando esce torna su (Ninja, cap.~9).\par
+
+\subsection{\texttt{BP\_Leva}}\label{bp:BP_Leva}
+\noindent Rifà \texttt{AInteractLever} (\texttt{Switches.h}). Classe padre: \nodo{BP\_Interruttore}.\par
+\smallskip\noindent\textbf{Componenti.} \var{Base} (\var{Cube} $(0{,}5;\ 0{,}7;\ 0{,}9)$ a Z 45), \var{Perno} (Scene a Z 90) con \var{Manico} (\var{Cylinder} $0{,}08 \times 0{,}08 \times 0{,}7$ a Z 35), \nodo{Text Render} a Z 190. Collisione della base sul canale \emph{Interact} (o \emph{Visibility}). Implementa \var{BPI\_Interagibile}.\par
+\noindent\textbf{Origine (pivot).} \textbf{a terra}.\par
+\smallskip\noindent\textbf{Variabili} (tutte \emph{Instance Editable}):
+\begin{variabili}
+Prompt & Text & Tira la leva & Testo mostrato dall'HUD vicino alla leva. \\
+Toggle & Boolean & sì & Se vero, ogni pressione cambia stato; se falso si tira una volta sola. \\
+Label & Text &  & Scritta sopra la leva (vuota = nessuna). \\
+\end{variabili}
+\noindent In più eredita le variabili di \texttt{BP\_Interruttore} (sezione~\ref{bp:BP_Interruttore}).\par
+\smallskip\noindent\textbf{Logica.} \var{Interagisci}: se \var{Toggle} alterna acceso/spento, altrimenti accende soltanto; il manico ruota da $-$40\textdegree{} a +40\textdegree{}; \var{GetPrompt} restituisce \var{Prompt} (Ninja, cap.~9).\par
+
+\subsection{\texttt{BP\_Porta}}\label{bp:BP_Porta}
+\noindent Rifà \texttt{AActivableDoor} (\texttt{Activable.h}). Classe padre: \nodo{BP\_Attivabile}.\par
+\smallskip\noindent\textbf{Componenti.} due \nodo{Scene} cerniere \var{CernieraSx} (Y $= -\mathrm{DoorWidth}/2$) e \var{CernieraDx} (Y $= +\mathrm{DoorWidth}/2$), con figlie le ante (\var{Cube} scala $(\mathrm{DoorThickness};\ \mathrm{DoorWidth}/2;\ \mathrm{DoorHeight})/100$, a Y $\pm\mathrm{DoorWidth}/4$ verso il centro e Z $\mathrm{DoorHeight}/2$).\par
+\noindent\textbf{Origine (pivot).} \textbf{a terra}, al centro del vano.\par
+\smallskip\noindent\textbf{Variabili} (tutte \emph{Instance Editable}):
+\begin{variabili}
+DoorWidth & Float & 240 & Larghezza totale del vano (le due ante insieme), in cm. \\
+DoorHeight & Float & 300 &  \\
+DoorThickness & Float & 20 &  \\
+Sliding & Boolean & sì & Vero: le ante scorrono di lato. Falso: ruotano sui cardini. \\
+OpenAngle & Float & 95 & Gradi di apertura se ruotano. \\
+DoorMaterial & MaterialInterface (riferimento) &  &  \\
+\end{variabili}
+\noindent In più eredita le variabili di \texttt{BP\_Attivabile} (sezione~\ref{bp:BP_Attivabile}).\par
+\smallskip\noindent\textbf{Logica.} \var{Applica(Alpha)}: se \var{Sliding}, le cerniere scorrono di $\mathrm{DoorWidth}/2 \cdot$ Alpha verso l'esterno; altrimenti ruotano di $\pm\mathrm{OpenAngle} \cdot$ Alpha (Ninja, cap.~9).\par
+
+\subsection{\texttt{BP\_LuceAttivabile}}\label{bp:BP_LuceAttivabile}
+\noindent Rifà \texttt{AActivableLight} (\texttt{Activable.h}). Classe padre: \nodo{BP\_Attivabile}.\par
+\smallskip\noindent\textbf{Componenti.} \nodo{Point Light} (40 cd, Movable) e, se \var{ShowBulb}, una \var{Sphere} scala 0,2 con un materiale emissivo.\par
+\noindent\textbf{Origine (pivot).} dove sta la lampadina.\par
+\smallskip\noindent\textbf{Variabili} (tutte \emph{Instance Editable}):
+\begin{variabili}
+ShowBulb & Boolean & sì & Il bulbo visibile: la luce "motivata" (opzionale). \\
+\end{variabili}
+\noindent In più eredita le variabili di \texttt{BP\_Attivabile} (sezione~\ref{bp:BP_Attivabile}).\par
+\smallskip\noindent\textbf{Logica.} \var{Applica(Alpha)}: \nodo{Set Intensity} = 40 $\cdot$ Alpha (parte spenta).\par
+
+\subsection{\texttt{BP\_Ascensore}}\label{bp:BP_Ascensore}
+\noindent Rifà \texttt{AActivableMover} (\texttt{Activable.h}). Classe padre: \nodo{BP\_Attivabile}.\par
+\smallskip\noindent\textbf{Componenti.} \nodo{Static Mesh} \var{Mesh} (\var{Cube} scala \var{PlatformSize}/100) figlia della root.\par
+\noindent\textbf{Origine (pivot).} il \textbf{centro} della piattaforma nella posizione di partenza.\par
+\smallskip\noindent\textbf{Variabili} (tutte \emph{Instance Editable}):
+\begin{variabili}
+EndOffset & Vector & (0, 0, 400) & Punto di arrivo, relativo (si trascina con il rombo nel viewport). \\
+PlatformSize & Vector & (300, 300, 30) &  \\
+\end{variabili}
+\noindent In più eredita le variabili di \texttt{BP\_Attivabile} (sezione~\ref{bp:BP_Attivabile}).\par
+\smallskip\noindent\textbf{Logica.} \var{Applica(Alpha)}: \nodo{Set Relative Location} della mesh = \var{EndOffset} $\cdot$ Alpha.\par
+
+\subsection{\texttt{BP\_CresceConDistanza}}\label{bp:BP_CresceConDistanza}
+\noindent Rifà \texttt{AScaleByDistanceActor} (\texttt{PlatformerGym.h}). Classe padre: \nodo{Actor}.\par
+\smallskip\noindent\textbf{Componenti.} \nodo{Static Mesh} \var{Mesh} (\var{ShapeMesh}, default \var{Cube}), \nodo{Text Render} sopra.\par
+\noindent\textbf{Origine (pivot).} il \textbf{centro} della forma.\par
+\smallskip\noindent\textbf{Variabili} (tutte \emph{Instance Editable}):
+\begin{variabili}
+ShapeMesh & StaticMesh (riferimento) &  & La mesh (cubo, sfera...). \\
+Material & MaterialInterface (riferimento) &  &  \\
+BaseSize & Vector & (300, 300, 30) & Dimensione a scala 1, in cm. \\
+MinScale & Float & 0.4 & Scala quando il giocatore è vicino (entro NearDistance). \\
+MaxScale & Float & 1.5 & Scala quando il giocatore è lontano (oltre FarDistance). \\
+NearDistance & Float & 250 &  \\
+FarDistance & Float & 2000 &  \\
+ScaleHeight & Boolean & sì & Se falso, cambia solo larghezza e profondità (per le piattaforme: lo spessore resta quello). \\
+InterpSpeed & Float & 6 & Quanto in fretta segue la scala voluta (0 = subito). \\
+Label & Text &  &  \\
+\end{variabili}
+\smallskip\noindent\textbf{Logica.} Tick: distanza dal giocatore $\rightarrow$ \nodo{Map Range Clamped} (\var{NearDistance}..\var{FarDistance} $\rightarrow$ \var{MinScale}..\var{MaxScale}) $\rightarrow$ \nodo{FInterp To} (\var{InterpSpeed}) $\rightarrow$ scala = \var{BaseSize}/100 $\cdot$ fattore (se \var{ScaleHeight} è no, la Z resta \var{BaseSize.Z}/100) (Ninja, cap.~7). Nel livello 1 cresce allontanandosi; nel livello 2 le piattaforme \emph{rimpiccioliscono} avvicinandosi: è lo stesso Blueprint con \var{MinScale} $<$ \var{MaxScale}.\par
+
+\subsection{\texttt{BP\_CambiaModello}}\label{bp:BP_CambiaModello}
+\noindent Rifà \texttt{AModelCyclerActor} (\texttt{PlatformerGym.h}). Classe padre: \nodo{Actor}.\par
+\smallskip\noindent\textbf{Componenti.} \nodo{Static Mesh} \var{Mesh} (scala \var{Size}/100; con \var{Collide} collisione \emph{BlockAll}, altrimenti nessuna), \nodo{Text Render} sopra.\par
+\noindent\textbf{Origine (pivot).} il \textbf{centro} della forma.\par
+\smallskip\noindent\textbf{Variabili} (tutte \emph{Instance Editable}):
+\begin{variabili}
+Models & Array di StaticMesh &  & I modelli, in ordine. \\
+Materials & Array di MaterialInterface &  & Materiali (uno per modello, oppure uno solo per tutti; vuoto = quelli della mesh). \\
+Interval & Float & 1 & Secondi fra un modello e l'altro. \\
+Size & Vector & (200, 200, 200) & Dimensione di ogni modello (le forme dell'engine sono di 100 cm). \\
+Collide & Boolean & sì & Se vero, ci si può salire sopra (è una piattaforma). \\
+Label & Text &  &  \\
+\end{variabili}
+\smallskip\noindent\textbf{Logica.} \var{Models} = [Cube, Cylinder, Sphere, Cone] (da \texttt{/Engine/BasicShapes}); timer ripetuto ogni \var{Interval}: indice successivo (modulo), \nodo{Set Static Mesh} e \nodo{Set Material} con lo stesso indice in \var{Materials} (Ninja, cap.~7).\par
+
+\subsection{\texttt{BP\_PresenzaCasuale}}\label{bp:BP_PresenzaCasuale}
+\noindent Rifà \texttt{ARandomPresenceActor} (\texttt{PlatformerGym.h}). Classe padre: \nodo{Actor}.\par
+\smallskip\noindent\textbf{Componenti.} \nodo{Static Mesh} \var{Mesh} (\var{ShapeMesh}, default \var{Cube}; scala \var{Size}/100; \emph{BlockAll}), \nodo{Text Render}.\par
+\noindent\textbf{Origine (pivot).} il \textbf{centro} dell'oggetto (per il ponte: centro del ponte, Z = piano $-$ 15).\par
+\smallskip\noindent\textbf{Variabili} (tutte \emph{Instance Editable}):
+\begin{variabili}
+SpawnChance & Float & 0.35 & Probabilità di esserci (0..1). \\
+Size & Vector & (1000, 200, 30) & Dimensione in cm. \\
+ShapeMesh & StaticMesh (riferimento) &  &  \\
+Material & MaterialInterface (riferimento) &  &  \\
+Announce & Boolean & sì & Se vero, un messaggio a schermo dice se questa volta c'è. \\
+PresentMessage & String & Fortuna! L'oggetto fortunato questa volta c'e' (35\%) &  \\
+AbsentMessage & String & L'oggetto fortunato questa volta non c'e'... &  \\
+Label & Text &  &  \\
+\end{variabili}
+\smallskip\noindent\textbf{Logica.} BeginPlay: \nodo{Random Bool with Weight}(\var{SpawnChance}); se esce no, nascosto e senza collisione. Se \var{Announce}, dopo 0,5\,s \var{PresentMessage} o \var{AbsentMessage} (Ninja, cap.~7).\par
+
+\subsection{\texttt{BP\_Mulino}}\label{bp:BP_Mulino}
+\noindent Rifà \texttt{AWindmill} (\texttt{Windmill.h}). Classe padre: \nodo{Actor}.\par
+\smallskip\noindent\textbf{Componenti.} \var{Torre} (\var{Cylinder} scala $(1{,}6;\ 1{,}6;\ \mathrm{TowerHeight}/100)$ a Z $\mathrm{TowerHeight}/2$), \var{Testa} (Scene a Z \var{TowerHeight}), \var{Mozzo} (Scene a X 110 della testa) con quattro pale (\var{Cube} scala $(0{,}15;\ 0{,}7;\ \mathrm{BladeLength}/100)$, ruotate di 0, 90, 180, 270\textdegree{} in Roll e spostate di $\mathrm{BladeLength}/2+40$ lungo il proprio asse).\par
+\noindent\textbf{Origine (pivot).} \textbf{a terra}, al centro della torre.\par
+\smallskip\noindent\textbf{Variabili} (tutte \emph{Instance Editable}):
+\begin{variabili}
+BladeSpeed & Float & 60 & Gradi al secondo delle pale. \\
+LookAtPlayer & Boolean & sì & Se vero, la testa si gira verso il player (entro YawLimit). \\
+YawLimit & Float & 60 & Quanto può girarsi la testa a destra e a sinistra (gradi, il Clamp). \\
+TowerHeight & Float & 900 & Altezza della torre (cm). \\
+BladeLength & Float & 450 & Lunghezza di una pala (cm). \\
+BladesCollide & Boolean & no & Se vero, le pale hanno collisione (ostacolo). \\
+TowerMaterial & MaterialInterface (riferimento) &  &  \\
+BladeMaterial & MaterialInterface (riferimento) &  &  \\
+\end{variabili}
+\smallskip\noindent\textbf{Logica.} pale: \nodo{Add Local Rotation} Roll = \var{BladeSpeed} $\cdot$ dt; se \var{LookAtPlayer}, la testa ruota verso il giocatore con yaw limitato a $\pm$\var{YawLimit} rispetto all'actor (\nodo{Find Look at Rotation}, \nodo{Clamp Angle}) (Ninja, cap.~13).\par
+
+\subsection{\texttt{BP\_CasseFisiche}}\label{bp:BP_CasseFisiche}
+\noindent Rifà \texttt{ACubeSpawner} (\texttt{CubeSpawner.h}). Classe padre: \nodo{Actor}.\par
+\smallskip\noindent\textbf{Componenti.} una \nodo{Scene} root; le casse sono actor \var{BP\_CassaFisica} (un \var{Cube} con \emph{Simulate Physics}).\par
+\noindent\textbf{Origine (pivot).} sopra il centro della griglia di casse (i raggi partono da qui e scendono).\par
+\smallskip\noindent\textbf{Variabili} (tutte \emph{Instance Editable}):
+\begin{variabili}
+Rows & Integer & 3 &  \\
+Columns & Integer & 4 &  \\
+CubeLayers & Integer & 1 & Quanti cubi uno sopra l'altro in ogni cella. \\
+CubeSize & Float & 60 & Lato di un cubo (cm). \\
+Spacing & Float & 70 & Distanza fra i centri dei cubi (cm). \\
+SimulatePhysics & Boolean & sì & Se vero, i cubi hanno la fisica (si spingono e cadono). \\
+CubeMass & Float & 8 & Massa di ogni cubo (kg): leggera = il personaggio li spinge facilmente. \\
+Materials & Array di MaterialInterface &  &  \\
+DebugTraces & Boolean & no & Disegna in editor le linee dei trace. \\
+\end{variabili}
+\smallskip\noindent\textbf{Logica.} BeginPlay: doppio \nodo{For Loop} \var{Rows} $\times$ \var{Columns}; per ogni cella un \nodo{Line Trace} verso il basso trova il terreno, poi \var{CubeLayers} casse impilate di lato \var{CubeSize}, passo \var{Spacing}, massa \var{CubeMass}, materiale alternato da \var{Materials} (la lezione dei due cicli for).\par
+
+\subsection{\texttt{BP\_Staccionata}}\label{bp:BP_Staccionata}
+\noindent Rifà \texttt{ASplineFence} (\texttt{LevelDressing.h}). Classe padre: \nodo{Actor}.\par
+\smallskip\noindent\textbf{Componenti.} \nodo{Spline} \var{Percorso}, \nodo{Instanced Static Mesh} \var{Pali} (\var{PostMesh}, default \var{Cube} scala \var{PostSize}).\par
+\noindent\textbf{Origine (pivot).} il primo punto della spline.\par
+\smallskip\noindent\textbf{Variabili} (tutte \emph{Instance Editable}):
+\begin{variabili}
+PostMesh & StaticMesh (riferimento) &  & Mesh dei paletti (vuota = cilindro). \\
+Spacing & Float & 200 & Un paletto ogni Spacing cm lungo la spline. \\
+PostSize & Vector & (14, 14, 110) & Dimensioni di un paletto (cm). \\
+Rails & Integer & 2 & Quante traverse fra un paletto e l'altro (0 = nessuna). \\
+RailThickness & Float & 8 & Spessore delle traverse (cm). \\
+Material & MaterialInterface (riferimento) &  &  \\
+Collide & Boolean & sì & Se vero, la staccionata blocca il personaggio. \\
+\end{variabili}
+\smallskip\noindent\textbf{Logica.} Construction Script: un palo ogni \var{Spacing} cm lungo la spline, \var{Rails} traverse fra i pali con spessore \var{RailThickness} (Ninja, cap.~13). I punti della spline sono nelle tabelle (coordinate \emph{locali}).\par
+
+\subsection{\texttt{BP\_Spargi}}\label{bp:BP_Spargi}
+\noindent Rifà \texttt{AScatterArea} (\texttt{LevelDressing.h}). Classe padre: \nodo{Actor}.\par
+\smallskip\noindent\textbf{Componenti.} \nodo{Box Collision} \var{Area} (extent \var{AreaExtent}, solo per vederla nell'editor), \nodo{Instanced Static Mesh} \var{Istanze} (\var{Mesh}).\par
+\noindent\textbf{Origine (pivot).} il \textbf{centro} dell'area (Z: sopra il terreno, i raggi scendono).\par
+\smallskip\noindent\textbf{Variabili} (tutte \emph{Instance Editable}):
+\begin{variabili}
+Mesh & StaticMesh (riferimento) &  &  \\
+AreaExtent & Vector & (1000, 1000, 500) & Metà delle dimensioni dell'area (cm). \\
+Count & Integer & 30 &  \\
+Seed & Integer & 7 & Seme del caso: stesso seme = stessa disposizione. \\
+MinScale & Float & 0.8 &  \\
+MaxScale & Float & 1.3 &  \\
+MinDistance & Float & 150 & Distanza minima fra due istanze (cm), come il raggio del foliage. \\
+AlignToGround & Boolean & sì & Se vero, ogni istanza è appoggiata al terreno con un trace verso il basso. \\
+Collide & Boolean & no & Se vero, le istanze hanno collisione (gli alberi sì, l'erba no). \\
+CullDistance & Float & 0 & Oltre questa distanza le istanze spariscono (0 = mai). \\
+\end{variabili}
+\smallskip\noindent\textbf{Logica.} Construction Script con un \nodo{Random Stream} di seme \var{Seed}: \var{Count} punti a caso nell'area, scartando quelli a meno di \var{MinDistance} da un altro, \nodo{Line Trace} verso il basso (se \var{AlignToGround}), scala fra \var{MinScale} e \var{MaxScale}, yaw a caso, \nodo{Add Instance} (Ninja, cap.~13). Negli alberi: mesh \var{SM\_Chestnut\_4}.\par
+
+\subsection{\texttt{BP\_LuceTremolante}}\label{bp:BP_LuceTremolante}
+\noindent Rifà \texttt{AFlickeringLight} (\texttt{LevelDressing.h}). Classe padre: \nodo{Actor}.\par
+\smallskip\noindent\textbf{Componenti.} \nodo{Point Light} (root o figlia; Movable, temperatura \var{Temperature}, raggio \var{AttenuationRadius}, \emph{Source Radius} \var{SourceRadius}).\par
+\noindent\textbf{Origine (pivot).} dove sta la fiamma (nei bracieri: 150\,cm sopra il piano).\par
+\smallskip\noindent\textbf{Variabili} (tutte \emph{Instance Editable}):
+\begin{variabili}
+BaseIntensity & Float & 60 & Intensità media (candele). \\
+FlickerAmount & Float & 0.25 & Quanto varia l'intensità (0 = ferma, 0.5 = ±50\%). \\
+FlickerSpeed & Float & 6 & Velocità del tremolio. \\
+PositionJitter & Float & 4 & Quanto si sposta la sorgente (cm): le ombre "respirano" come con una fiamma vera. \\
+Temperature & Float & 1900 & Temperatura colore (K): 1900 fuoco, 2700 lampadina calda, 6500 luce fredda. \\
+AttenuationRadius & Float & 900 &  \\
+SourceRadius & Float & 15 & Raggio della sorgente (cm): più grande = ombre più morbide. \\
+CastShadows & Boolean & sì &  \\
+GlowActors & Array di Actor &  & Attori con un materiale emissivo da far tremolare insieme alla luce (braci, fiamme). \\
+GlowParameter & Name & Intensita & Nome del parametro scalare del materiale emissivo da animare. \\
+GlowBaseValue & Float & 8 & Valore del parametro quando la luce è all'intensità media. \\
+\end{variabili}
+\smallskip\noindent\textbf{Logica.} Tick: intensità = \var{BaseIntensity} $\cdot$ (1 + rumore $\cdot$ \var{FlickerAmount}) con \nodo{FInterp To} verso un bersaglio casuale (\var{FlickerSpeed}); piccolo spostamento casuale di \var{PositionJitter} cm; sugli actor in \var{GlowActors} imposta il parametro \var{GlowParameter} del materiale emissivo in proporzione (Ninja, cap.~13). Nel braciere \var{GlowActors} = la sfera delle braci.\par
+

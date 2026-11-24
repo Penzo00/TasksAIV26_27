@@ -1,0 +1,130 @@
+%% generato da strumenti/estrai_livelli.py: non modificare a mano
+\subsection{Luce, atmosfera e partenza}
+\begin{itemize}
+\item \nodo{Directional Light} (il sole): Mobility \emph{Movable}, Rotation pitch -38, yaw 40; Intensity 8 lux; \emph{Use Temperature} sì, Temperature 5600 K; \emph{Atmosphere Sun Light} sì; Source Angle 1.
+\item \nodo{Sky Atmosphere} (valori di default).
+\item \nodo{Sky Light}: Movable, \emph{Real Time Capture} sì, Intensity 1.
+\item \nodo{Exponential Height Fog} a Z $-200$: Fog Density 0,02.
+\item \nodo{Post Process Volume}: \emph{Infinite Extent (Unbound)} sì; spuntate e impostate Auto Exposure Bias 0,2, Bloom Intensity 0,6, Vignette Intensity 0,3.
+\item \nodo{Player Start} in (-150; 0; 120), rotazione 0.
+\end{itemize}
+
+\subsection{Partenza e primo tratto}
+\begin{oggetti}
+1 & Text Render & Scritta & (150; 0; 330) & yaw 180 & ``LIVELLO 2 / ostacoli e congegni'', World Size 55, colore (1; 1; 1) \\
+2 & BP\_\allowbreak{}ZonaCaduta & Zona\_\allowbreak{}Caduta & (9500; 0; -600) & -- & ZoneExtent = (12500; 4000; 150); ShowVisual = no \\
+3 & Pedana & P0\_\allowbreak{}Partenza & (0; 0; -20) & (800; 800; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}Percorso, si cammina a Z = 0 \\
+\end{oggetti}
+
+\subsection{Pedana di lancio (Launch Character)}
+\begin{oggetti}
+4 & Pedana & P1\_\allowbreak{}Lancio & (800; 0; -20) & (400; 400; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}PercorsoScuro, si cammina a Z = 0 \\
+5 & BP\_\allowbreak{}Trampolino & Pedana\_\allowbreak{}Lancio & (800; 0; 10) & -- & LaunchVelocity = (350; 0; 1300); OverrideHorizontal = sì; PadMaterial = MI\_\allowbreak{}AIV\_\allowbreak{}Salto \\
+6 & Pedana & P2\_\allowbreak{}Alto & (1500; 0; 250) & (500; 500; 500) & MI\_\allowbreak{}AIV\_\allowbreak{}Percorso, si cammina a Z = 500 \\
+7 & BP\_\allowbreak{}Moneta & Moneta\_\allowbreak{}P2 & (1500; 0; 590) & -- & Value = 1; Material = MI\_\allowbreak{}AIV\_\allowbreak{}Moneta; GlowIntensity = 4; GlowColor = (1; 0,75; 0,3) \\
+\end{oggetti}
+
+\subsection{La torretta (con ripari e una cura)}
+\begin{oggetti}
+8 & Pedana & P3\_\allowbreak{}Tiro & (2500; 0; 480) & (1200; 600; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}Percorso, si cammina a Z = 500 \\
+9 & Cubo & Riparo\_\allowbreak{}1 & (2150; -80; 600) & (80; 300; 200) & MI\_\allowbreak{}AIV\_\allowbreak{}LegnoScuro \\
+10 & Cubo & Riparo\_\allowbreak{}2 & (2600; 120; 600) & (80; 300; 200) & MI\_\allowbreak{}AIV\_\allowbreak{}LegnoScuro \\
+11 & Pedana & Torretta\_\allowbreak{}Base & (2900; -650; 250) & (300; 300; 700) & MI\_\allowbreak{}AIV\_\allowbreak{}Pericolo, si cammina a Z = 600 \\
+12 & BP\_\allowbreak{}Torretta & Torretta & (2900; -650; 600) & yaw 90 & Range = 1800; FireInterval = 1,6; TurnSpeed = 3; ProjectileSpeed = 1400; ProjectileDamage = 20; LeadTarget = no; BodyMaterial = MI\_\allowbreak{}AIV\_\allowbreak{}Torretta; ProjectileMaterial = MI\_\allowbreak{}AIV\_\allowbreak{}Proiettile \\
+13 & BP\_\allowbreak{}Moneta & Moneta\_\allowbreak{}P3\_\allowbreak{}1 & (2000; 150; 590) & -- & Value = 1; Material = MI\_\allowbreak{}AIV\_\allowbreak{}Moneta; GlowIntensity = 4; GlowColor = (1; 0,75; 0,3) \\
+14 & BP\_\allowbreak{}Moneta & Moneta\_\allowbreak{}P3\_\allowbreak{}2 & (2400; 150; 590) & -- & Value = 1; Material = MI\_\allowbreak{}AIV\_\allowbreak{}Moneta; GlowIntensity = 4; GlowColor = (1; 0,75; 0,3) \\
+15 & BP\_\allowbreak{}PickupSalute & Cura\_\allowbreak{}P3 & (3000; 200; 590) & -- & HealAmount = 40; Material = MI\_\allowbreak{}AIV\_\allowbreak{}Vita; GlowColor = (0,3; 1; 0,4); Label = ``+VITA'' \\
+16 & Text Render & Scritta & (2000; 0; 800) & yaw 180 & ``la torretta ti vede: usa i ripari'', World Size 35, colore (1; 1; 1) \\
+\end{oggetti}
+
+\subsection{Piattaforme che crollano}
+\begin{oggetti}
+17 & BP\_\allowbreak{}PiattaformaCrolla & Crolla\_\allowbreak{}1 & (3400; 0; 485) & -- & PlatformSize = (250; 250; 30); ShakeTime = 0,7; RespawnTime = 3; PlatformMaterial = MI\_\allowbreak{}AIV\_\allowbreak{}Salto; WarningMaterial = MI\_\allowbreak{}AIV\_\allowbreak{}Pericolo; CrumbleSound = Rock\_\allowbreak{}Cue \\
+18 & BP\_\allowbreak{}PiattaformaCrolla & Crolla\_\allowbreak{}2 & (3800; 0; 485) & -- & PlatformSize = (250; 250; 30); ShakeTime = 0,7; RespawnTime = 3; PlatformMaterial = MI\_\allowbreak{}AIV\_\allowbreak{}Salto; WarningMaterial = MI\_\allowbreak{}AIV\_\allowbreak{}Pericolo; CrumbleSound = Rock\_\allowbreak{}Cue \\
+19 & BP\_\allowbreak{}PiattaformaCrolla & Crolla\_\allowbreak{}3 & (4200; 0; 485) & -- & PlatformSize = (250; 250; 30); ShakeTime = 0,7; RespawnTime = 3; PlatformMaterial = MI\_\allowbreak{}AIV\_\allowbreak{}Salto; WarningMaterial = MI\_\allowbreak{}AIV\_\allowbreak{}Pericolo; CrumbleSound = Rock\_\allowbreak{}Cue \\
+20 & BP\_\allowbreak{}Moneta & Moneta\_\allowbreak{}Crolla & (3800; 0; 590) & -- & Value = 1; Material = MI\_\allowbreak{}AIV\_\allowbreak{}Moneta; GlowIntensity = 4; GlowColor = (1; 0,75; 0,3) \\
+\end{oggetti}
+
+\subsection{Leva ("premi E") e ascensore}
+\begin{oggetti}
+21 & Pedana & P4\_\allowbreak{}Leva & (4750; 0; 480) & (600; 600; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}PercorsoScuro, si cammina a Z = 500 \\
+22 & BP\_\allowbreak{}Ascensore & Ascensore & (5250; 0; 485) & -- & EndOffset = (0; 0; 450); PlatformSize = (300; 300; 30); TransitionTime = 2,5; Material (mesh) = MI\_\allowbreak{}AIV\_\allowbreak{}Salto \\
+23 & BP\_\allowbreak{}Leva & Leva\_\allowbreak{}Ascensore & (4900; -220; 500) & yaw 180 & Prompt = ``Chiama l'ascensore''; Toggle = sì; Label = ``LEVA''; OnMaterial = MI\_\allowbreak{}AIV\_\allowbreak{}Acceso; OffMaterial = MI\_\allowbreak{}AIV\_\allowbreak{}Spento; Targets = [Ascensore] \\
+\end{oggetti}
+
+\subsection{WALL RUN e WALL JUMP}
+\begin{oggetti}
+24 & Pedana & P5\_\allowbreak{}WallRun & (5700; 0; 930) & (500; 500; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}Percorso, si cammina a Z = 950 \\
+25 & Text Render & Scritta & (5650; 0; 1230) & yaw 180 & ``WALL RUN: corri e salta verso il muro blu / salta di nuovo per passare all'altro muro'', World Size 32, colore (0,5; 0,8; 1) \\
+26 & Cubo & Muro\_\allowbreak{}A & (6450; 350; 1100) & (800; 100; 700) & MI\_\allowbreak{}AIV\_\allowbreak{}Muro, Tag: WallRun \\
+27 & Cubo & Muro\_\allowbreak{}B & (7300; -350; 1100) & (800; 100; 700) & MI\_\allowbreak{}AIV\_\allowbreak{}Muro, Tag: WallRun \\
+28 & BP\_\allowbreak{}Moneta & Moneta\_\allowbreak{}MuroA & (6500; 220; 1140) & -- & Value = 1; Material = MI\_\allowbreak{}AIV\_\allowbreak{}Moneta; GlowIntensity = 4; GlowColor = (1; 0,75; 0,3) \\
+29 & BP\_\allowbreak{}Moneta & Moneta\_\allowbreak{}MuroB & (7350; -220; 1140) & -- & Value = 1; Material = MI\_\allowbreak{}AIV\_\allowbreak{}Moneta; GlowIntensity = 4; GlowColor = (1; 0,75; 0,3) \\
+\nota{se cadi: un pavimento di sicurezza e una pedana che ti rilancia su P5}
+30 & Pedana & Sotto\_\allowbreak{}Sicurezza & (6900; 0; 480) & (2000; 1200; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}PercorsoScuro, si cammina a Z = 500 \\
+31 & BP\_\allowbreak{}Trampolino & Pedana\_\allowbreak{}Ritorno & (6650; 0; 510) & yaw 180 & LaunchVelocity = (350; 0; 1300); OverrideHorizontal = sì; PadMaterial = MI\_\allowbreak{}AIV\_\allowbreak{}Salto \\
+32 & Text Render & Scritta & (6650; 0; 760) & yaw 180 & ``caduto? la pedana ti riporta su'', World Size 30, colore (1; 1; 1) \\
+33 & Pedana & P6\_\allowbreak{}DopoMuri & (8150; 0; 930) & (800; 1000; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}Percorso, si cammina a Z = 950 \\
+\end{oggetti}
+
+\subsection{Corridoio di lava (toglie vita)}
+\begin{oggetti}
+34 & Pedana & P7\_\allowbreak{}Lava & (9250; 0; 930) & (1400; 600; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}PercorsoScuro, si cammina a Z = 950 \\
+35 & BP\_\allowbreak{}ZonaDanno & Lava & (9250; 0; 1010) & -- & ZoneExtent = (400; 300; 60); DamagePerHit = 10; HitInterval = 1; Label = ``LAVA: 10 HP al secondo, attraversa in fretta''; VisualMaterial = MI\_\allowbreak{}AIV\_\allowbreak{}Lava; VisualThickness = 6 \\
+36 & Point Light & Luce\_\allowbreak{}Lava & (9250; 0; 1080) & -- & 120 cd, raggio 900, colore (1; 0,35; 0,08), niente ombre \\
+37 & Decal & Bruciatura\_\allowbreak{}0 & (8780; 180; 960) & rot (-90; 0; 0), Decal Size (30; 130; 130) & MI\_\allowbreak{}AIV\_\allowbreak{}Bruciatura \\
+38 & Decal & Bruciatura\_\allowbreak{}1 & (8800; -200; 960) & rot (-90; 40; 0), Decal Size (30; 130; 130) & MI\_\allowbreak{}AIV\_\allowbreak{}Bruciatura \\
+39 & Decal & Bruciatura\_\allowbreak{}2 & (9720; 120; 960) & rot (-90; 80; 0), Decal Size (30; 130; 130) & MI\_\allowbreak{}AIV\_\allowbreak{}Bruciatura \\
+40 & Decal & Bruciatura\_\allowbreak{}3 & (9700; -170; 960) & rot (-90; 120; 0), Decal Size (30; 130; 130) & MI\_\allowbreak{}AIV\_\allowbreak{}Bruciatura \\
+41 & BP\_\allowbreak{}Moneta & Moneta\_\allowbreak{}Lava\_\allowbreak{}1 & (9050; 0; 1040) & -- & Value = 1; Material = MI\_\allowbreak{}AIV\_\allowbreak{}Moneta; GlowIntensity = 4; GlowColor = (1; 0,75; 0,3) \\
+42 & BP\_\allowbreak{}Moneta & Moneta\_\allowbreak{}Lava\_\allowbreak{}2 & (9450; 0; 1040) & -- & Value = 1; Material = MI\_\allowbreak{}AIV\_\allowbreak{}Moneta; GlowIntensity = 4; GlowColor = (1; 0,75; 0,3) \\
+\end{oggetti}
+
+\subsection{La sbarra rotante che spinge}
+\begin{oggetti}
+43 & Pedana & P8\_\allowbreak{}Sbarra & (10450; 0; 930) & (800; 800; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}Percorso, si cammina a Z = 950 \\
+44 & BP\_\allowbreak{}BarraRotante & Sbarra\_\allowbreak{}Rotante & (10450; 0; 950) & -- & DegreesPerSecond = 75; BarSize = (650; 30; 40); BarHeight = 60; PushStrength = 900; KillOnTouch = no \\
+45 & BP\_\allowbreak{}Moneta & Moneta\_\allowbreak{}Sbarra & (10450; 300; 1040) & -- & Value = 1; Material = MI\_\allowbreak{}AIV\_\allowbreak{}Moneta; GlowIntensity = 4; GlowColor = (1; 0,75; 0,3) \\
+\end{oggetti}
+
+\subsection{Ghiaccio e negozio}
+\begin{oggetti}
+46 & Pedana & P9\_\allowbreak{}Piazza & (11400; 0; 930) & (900; 1200; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}PercorsoScuro, si cammina a Z = 950 \\
+47 & Cubo & Ponte\_\allowbreak{}Ghiaccio & (12350; -250; 930) & (1000; 300; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}Ghiaccio \\
+48 & BP\_\allowbreak{}ZonaModificatore & Zona\_\allowbreak{}Ghiaccio & (12075; -250; 1050) & -- & ZoneExtent = (775; 150; 100); GroundFrictionMultiplier = 0,08; BrakingMultiplier = 0,05; DurationAfterExit = 0,5; Label = ``GHIACCIO''; ShowVisual = no \\
+49 & BP\_\allowbreak{}Ascensore & Ponte\_\allowbreak{}Pagato & (12350; 250; 535) & -- & EndOffset = (0; 0; 400); PlatformSize = (1000; 300; 30); TransitionTime = 2; Material (mesh) = MI\_\allowbreak{}AIV\_\allowbreak{}Moneta \\
+50 & BP\_\allowbreak{}Negozio & Negozio & (11600; 400; 1050) & -- & ZoneExtent = (120; 120; 100); Cost = 5; OnlyOnce = sì; Label = ``5 MONETE: ponte sicuro''; VisualMaterial = MI\_\allowbreak{}AIV\_\allowbreak{}Moneta; Targets = [Ponte\_\allowbreak{}Pagato] \\
+51 & Text Render & Scritta & (11150; 0; 1250) & yaw 180 & ``ghiaccio gratis... o ponte sicuro a 5 monete'', World Size 32, colore (1; 1; 1) \\
+\end{oggetti}
+
+\subsection{JETPACK: il salto lunghissimo verso una piattaforma piccola}
+\begin{oggetti}
+52 & Pedana & P10\_\allowbreak{}Jetpack & (13250; 0; 930) & (800; 1000; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}Salto, si cammina a Z = 950 \\
+53 & BP\_\allowbreak{}PickupAbilita & Oggetto\_\allowbreak{}Jetpack & (13100; 0; 1060) & -- & Ability = Jetpack; Material = MI\_\allowbreak{}AIV\_\allowbreak{}Abilita; GlowIntensity = 20; GlowColor = (0,3; 0,7; 1); PickupRadius = 80; Label = ``JETPACK''; Message = ``Jetpack! In aria TIENI PREMUTO salto: voli finche' c'e' carburante'' \\
+54 & Spot Light & Luce\_\allowbreak{}Oggetto\_\allowbreak{}Jetpack & (13100; 0; 1650) & pitch -90 yaw 0 & 300 cd, raggio 1000, colore (0,5; 0,75; 1), coni 12/22° \\
+55 & Text Render & Scritta & (13300; 0; 1250) & yaw 180 & ``JETPACK: salta e TIENI PREMUTO salto / pilota fino alla piattaforma piccola'', World Size 32, colore (1; 0,65; 0,3) \\
+56 & Pedana & P11\_\allowbreak{}Atterraggio & (14950; 0; 1080) & (300; 300; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}Salto, si cammina a Z = 1100 \\
+57 & BP\_\allowbreak{}Moneta & Moneta\_\allowbreak{}Atterraggio & (14950; 0; 1190) & -- & Value = 2; Material = MI\_\allowbreak{}AIV\_\allowbreak{}Moneta; GlowIntensity = 4; GlowColor = (1; 0,75; 0,3) \\
+\end{oggetti}
+
+\subsection{Piattaforme che si restringono mentre ti avvicini}
+\begin{oggetti}
+58 & BP\_\allowbreak{}CresceConDistanza & Si\_\allowbreak{}Restringe\_\allowbreak{}1 & (15700; 0; 1085) & -- & Material = MI\_\allowbreak{}AIV\_\allowbreak{}Salto; BaseSize = (400; 400; 30); MinScale = 0,45; MaxScale = 1; NearDistance = 150; FarDistance = 900; ScaleHeight = no; Label = ``SI RESTRINGE QUANDO TI AVVICINI'' \\
+59 & BP\_\allowbreak{}CresceConDistanza & Si\_\allowbreak{}Restringe\_\allowbreak{}2 & (16400; 250; 1085) & -- & Material = MI\_\allowbreak{}AIV\_\allowbreak{}Salto; BaseSize = (400; 400; 30); MinScale = 0,45; MaxScale = 1; NearDistance = 150; FarDistance = 900; ScaleHeight = no \\
+60 & BP\_\allowbreak{}CresceConDistanza & Si\_\allowbreak{}Restringe\_\allowbreak{}3 & (17100; -150; 1085) & -- & Material = MI\_\allowbreak{}AIV\_\allowbreak{}Salto; BaseSize = (400; 400; 30); MinScale = 0,45; MaxScale = 1; NearDistance = 150; FarDistance = 900; ScaleHeight = no \\
+\end{oggetti}
+
+\subsection{Torretta con i proiettili che fanno RIPARTIRE il livello}
+\begin{oggetti}
+61 & Pedana & P12\_\allowbreak{}TiroMortale & (18300; 0; 1080) & (1400; 700; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}Percorso, si cammina a Z = 1100 \\
+62 & Cubo & Riparo\_\allowbreak{}Mortale\_\allowbreak{}1 & (17950; -120; 1200) & (80; 300; 200) & MI\_\allowbreak{}AIV\_\allowbreak{}LegnoScuro \\
+63 & Cubo & Riparo\_\allowbreak{}Mortale\_\allowbreak{}2 & (18400; 150; 1200) & (80; 300; 200) & MI\_\allowbreak{}AIV\_\allowbreak{}LegnoScuro \\
+64 & Cubo & Riparo\_\allowbreak{}Mortale\_\allowbreak{}3 & (18800; -120; 1200) & (80; 300; 200) & MI\_\allowbreak{}AIV\_\allowbreak{}LegnoScuro \\
+65 & Pedana & Torretta\_\allowbreak{}Mortale\_\allowbreak{}Base & (18300; 900; 750) & (250; 250; 900) & MI\_\allowbreak{}AIV\_\allowbreak{}Pericolo, si cammina a Z = 1200 \\
+66 & BP\_\allowbreak{}Torretta & Torretta\_\allowbreak{}Mortale & (18300; 900; 1200) & yaw -90 & Range = 1600; FireInterval = 1,8; TurnSpeed = 2,5; ProjectileSpeed = 1100; RestartLevelOnHit = sì; BodyMaterial = MI\_\allowbreak{}AIV\_\allowbreak{}Pericolo; ProjectileMaterial = MI\_\allowbreak{}AIV\_\allowbreak{}Proiettile \\
+67 & Text Render & Scritta & (17700; 0; 1400) & yaw 180 & ``PROIETTILI MORTALI: se ti colpiscono il livello riparte / vai da un riparo all'altro'', World Size 32, colore (1; 0,35; 0,3) \\
+68 & Pedana & P13\_\allowbreak{}Arrivo & (19500; 0; 1080) & (800; 800; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}Traguardo, si cammina a Z = 1100 \\
+69 & BP\_\allowbreak{}Traguardo & Traguardo & (19550; 0; 1200) & -- & ZoneExtent = (150; 150; 100); NextLevel = L\_\allowbreak{}GD13\_\allowbreak{}Livello3\_\allowbreak{}BP; Message = ``Livello 2 completato! Ora di notte, a tempo''; Delay = 1,2; ResetDeathCount = no; Label = ``TRAGUARDO''; VisualMaterial = MI\_\allowbreak{}AIV\_\allowbreak{}Traguardo \\
+70 & Point Light & Luce\_\allowbreak{}Traguardo & (19550; 0; 1360) & -- & 30 cd, raggio 700, colore (0,4; 1; 0,5), niente ombre \\
+\end{oggetti}
+

@@ -131,3 +131,12 @@ Ogni meccanica è un **componente** o un **actor** separato, quindi si può rifa
 | `KillPlayerAndRestart` | `Open Level` con `Get Current Level Name` |
 
 Le classi restano nel progetto anche dopo: si possono usare come riferimento aprendo i `.h`, dove ogni parametro ha un commento.
+
+## Menu: C++ o Blueprints
+
+`L_GD13_Menu` è il livello di partenza (lo crea `gd13_platformer.py`, insieme ai tre livelli):
+si sceglie se giocare i livelli C++ o la loro copia in Blueprint (`L_GD13_Livello1_BP`,
+`_2_BP`, `_3_BP`). Nei livelli C++ il tasto **M** torna al menu; il traguardo del livello 3
+riporta al menu. Come costruire i livelli Blueprint da zero: `Docs/Blueprint_Livelli/`
+(PDF e sorgenti LaTeX). Per far partire il gioco dal menu: Project Settings > Maps & Modes >
+Game Default Map = `L_GD13_Menu`.

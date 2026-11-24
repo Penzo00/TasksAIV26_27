@@ -13,6 +13,8 @@
 #include "Engine/Font.h"
 #include "EngineUtils.h"
 #include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerController.h"
+#include "InputCoreTypes.h"
 
 void APlatformerHUD::BeginPlay()
 {
@@ -66,6 +68,17 @@ void APlatformerHUD::DrawHUD()
 	if (!Canvas)
 	{
 		return;
+	}
+	// M: si torna al menu di scelta della modalità (C++ / Blueprints)
+	if (APlayerController* MenuPC = GetOwningPlayerController())
+	{
+		if (MenuPC->WasInputKeyJustPressed(EKeys::M))
+		{
+			if (UPlatformerRunSubsystem* MenuRun = UPlatformerRunSubsystem::Get(this))
+			{
+				MenuRun->GoToMenu();
+			}
+		}
 	}
 	const float SW = Canvas->ClipX;
 	const float SH = Canvas->ClipY;

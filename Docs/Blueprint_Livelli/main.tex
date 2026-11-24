@@ -1,0 +1,291 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[italian]{babel}
+\usepackage{lmodern}
+\usepackage[margin=1.7cm]{geometry}
+\usepackage{bpninja}
+\usepackage{booktabs,tabularx,longtable,array,enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+\setlist{itemsep=1pt,topsep=3pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+\sloppy\emergencystretch=3em
+\newcommand{\nodo}[1]{\textsf{\textbf{#1}}}
+\newcommand{\var}[1]{\texttt{#1}}
+\newcommand{\tasto}[1]{\fbox{\footnotesize\textsf{#1}}}
+\newcommand{\ninja}[1]{\par\smallskip\noindent\colorbox{black!6}{\parbox{\dimexpr\linewidth-2\fboxsep}{\small\textbf{Mossa da ninja.} #1}}\par\smallskip}
+\newcommand{\attenzione}[1]{\par\smallskip\noindent\colorbox{orange!12}{\parbox{\dimexpr\linewidth-2\fboxsep}{\small\textbf{Attenzione.} #1}}\par\smallskip}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+% tabella degli oggetti di un livello
+\newenvironment{oggetti}{\par\footnotesize\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.15}%
+\begin{longtable}{@{}r L{2.35cm} L{2.9cm} L{2.25cm} L{2.4cm} L{5.85cm}@{}}
+\toprule
+\# & Cosa & Nome nell'Outliner & Posizione (X; Y; Z) & Misure / rotazione & Impostazioni \\
+\midrule\endhead
+\bottomrule\endfoot}{\end{longtable}\normalsize}
+\newcommand{\nota}[1]{\multicolumn{6}{@{}L{17.2cm}@{}}{\color{black!60}\itshape #1}\\}
+
+% tabella delle variabili di un Blueprint
+\newenvironment{variabili}{\par\footnotesize\setlength{\tabcolsep}{3pt}%
+\begin{longtable}{@{}L{3.3cm} L{3cm} L{2.3cm} L{8.2cm}@{}}
+\toprule Variabile & Tipo & Default & A cosa serve \\ \midrule\endhead
+\bottomrule\endfoot}{\end{longtable}\normalsize}
+
+\title{\textbf{Rifare i livelli in Blueprint}\\[4pt]\large Guida completa per ricostruire \texttt{L\_GD13\_Livello1}, \texttt{2} e \texttt{3} senza una riga di C++, e il menu che li sceglie}
+\author{Progetto \texttt{AIV\_UE5Intro}}
+\date{}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+% =====================================================================
+\section{Il menu e le due versioni}
+
+Il gioco ora parte da un livello ``padre'', \var{L\_GD13\_Menu}. È una piccola scena al tramonto vista da una telecamera fissa; sopra, due pulsanti:
+
+\begin{itemize}
+  \item \textbf{C++}: apre \var{L\_GD13\_Livello1}, i livelli costruiti con le classi C++ del progetto (\texttt{Source/AIV\_UE5Intro/Platformer});
+  \item \textbf{Blueprints}: apre \var{L\_GD13\_Livello1\_BP}, la copia esatta che costruirete voi con questa guida.
+\end{itemize}
+
+Si sceglie con il mouse, oppure con \tasto{1}/\tasto{C} e \tasto{2}/\tasto{B}, le frecce e \tasto{Invio}, o con il pad. Finché \var{L\_GD13\_Livello1\_BP} non esiste, il pulsante Blueprints è arancione e dice ``non ancora creato'': cliccandolo compare un avviso invece di aprire una mappa vuota. Nei livelli C++ il tasto \tasto{M} riporta al menu, e il traguardo del livello 3 riporta al menu invece che al livello 1.
+
+\subsection{I nomi dei livelli Blueprint}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Versione C++ & Versione Blueprint & Si va avanti con \\
+\midrule
+\var{L\_GD13\_Livello1} & \var{L\_GD13\_Livello1\_BP} & traguardo $\rightarrow$ \var{L\_GD13\_Livello2\_BP} \\
+\var{L\_GD13\_Livello2} & \var{L\_GD13\_Livello2\_BP} & traguardo $\rightarrow$ \var{L\_GD13\_Livello3\_BP} \\
+\var{L\_GD13\_Livello3} & \var{L\_GD13\_Livello3\_BP} & traguardo $\rightarrow$ \var{L\_GD13\_Menu} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Il suffisso è \var{\_BP} (maiuscolo, con il trattino basso) e non ``bp'' attaccato: nel Content Browser ogni livello Blueprint compare subito sotto il suo gemello C++, ed è la stessa convenzione dei prefissi che usa Unreal (\var{BP\_}, \var{MI\_}, \var{SM\_}). Tutti e tre vanno salvati in \texttt{Content/Maps}, cioè \texttt{/Game/Maps}: il menu cerca proprio \texttt{/Game/Maps/L\_GD13\_Livello1\_BP}. Se un giorno preferite un altro nome, cambiatelo nel menu (variabile \var{BlueprintFirstLevel} dell'HUD del menu, \texttt{PlatformerMenu.h}).
+
+\subsection{Creare il menu}
+
+Il menu lo crea lo stesso script dei livelli C++: in Unreal, \nodo{Tools} $\rightarrow$ \nodo{Execute Python Script\dots} $\rightarrow$ \texttt{Content/Python/gd13\_platformer.py} (che ora costruisce il menu e i tre livelli C++). Se volete solo il menu: nel \emph{Output Log}, riga di comando in modalità \emph{Python},
+\begin{center}\texttt{import gd13\_platformer as g; g.M.update(g.mat.tutti()); g.menu()}\end{center}
+Il livello usa il GameMode C++ \var{PlatformerMenuGameMode}: nessun personaggio, mouse visibile, l'HUD disegna i pulsanti. Perché il gioco parta dal menu anche in \emph{Standalone} o nel gioco impacchettato, in \nodo{Project Settings} $\rightarrow$ \nodo{Maps \& Modes} impostate \emph{Game Default Map} = \var{L\_GD13\_Menu} (l'\emph{Editor Startup Map} potete lasciarla com'è).
+
+\subsection{Tornare al menu e il game over nella versione Blueprint}
+
+Nei livelli \var{\_BP} non c'è niente di C++, quindi due piccole cose le fate voi:
+
+\begin{itemize}
+  \item \textbf{Il tasto M.} In \var{BP\_Eroe}: un evento di tastiera \nodo{M} (o una Input Action \var{IA\_Menu} nel vostro \var{IMC\_Ninja}) $\rightarrow$ \nodo{Open Level (by Name)} \var{L\_GD13\_Menu}.
+  \item \textbf{Il primo livello del game over.} In \var{GI\_Platform} la variabile \var{PrimoLivello} vale \var{L\_GD13\_Livello1\_BP}: a zero vite si ricomincia dal primo livello \emph{della vostra} versione, non da quello C++ (guida Ninja, capitolo 2).
+\end{itemize}
+
+\begin{bpgraph}
+\bpnode{k}{(0,0)}{bpev}{M (Keyboard Event)}{-}{exec/Pressed,exec/Released,struct/Key}
+\bpnode{c}{\dx{k}{0.7}{0}}{bpfn}{Open Level (by Name)}{exec/,name/Level Name: L\_GD13\_Menu,str/Options}{exec/}
+\bpexec{k-out1}{c-in1}
+\end{bpgraph}
+
+Il menu passa per \var{UPlatformerRunSubsystem::StartMode}: se volete sapere da Blueprint in quale versione si sta giocando, c'è il nodo \nodo{Is Blueprint Mode}.
+
+% =====================================================================
+\section{Prima di cominciare}
+
+\subsection{Quello che serve sapere dell'editor}
+
+\begin{itemize}
+  \item \textbf{Muoversi nel viewport}: tasto destro tenuto premuto + \tasto{W}\tasto{A}\tasto{S}\tasto{D} (\tasto{Q}/\tasto{E} giù e su), rotellina per la velocità. \tasto{F} inquadra l'actor selezionato. \tasto{G} nasconde le icone (vista ``di gioco'').
+  \item \textbf{Details}: il pannello a destra. Le caselle \emph{Location}, \emph{Rotation}, \emph{Scale} si scrivono a mano: è così che si mettono i numeri di questa guida. Cliccando sul lucchetto accanto a \emph{Scale} si sbloccano i tre valori.
+  \item \textbf{Outliner}: l'elenco degli actor del livello. \tasto{F2} rinomina; tasto destro $\rightarrow$ \emph{Move To} $\rightarrow$ \emph{Create New Folder} per le cartelle. Usate gli stessi nomi delle tabelle: quando confronterete la vostra versione con quella C++ ritroverete ogni pezzo.
+  \item \textbf{Duplicare}: \tasto{Ctrl}+\tasto{D}, oppure \tasto{Alt} mentre si trascina una freccia del gizmo. Dopo, correggete i numeri nei Details.
+  \item \textbf{Provare}: \nodo{Play} (\tasto{Alt}+\tasto{P}) parte dal Player Start; tasto destro nel viewport $\rightarrow$ \emph{Play From Here} parte dal punto inquadrato: comodissimo per provare un tratto senza rifare tutto il livello.
+\end{itemize}
+
+\subsection{Come leggere le coordinate}
+
+Tutto è in centimetri. Il percorso va sempre verso \textbf{+X}; +Y è a destra guardando il percorso, +Z è in alto. Nelle tabelle:
+\begin{itemize}
+  \item \textbf{Posizione} è il \emph{centro} dell'oggetto per i blocchi; per i Blueprint è l'origine dell'actor, descritta nel catalogo (per esempio, la torretta ha l'origine \emph{a terra}, la piattaforma mobile al \emph{centro}).
+  \item \textbf{Misure} di un blocco sono le dimensioni intere in cm: lunghezza X, larghezza Y, altezza Z. Con il \var{Cube} dell'engine (che è largo 100\,cm) la \emph{Scale} è la misura divisa per 100: un blocco $400 \times 400 \times 40$ ha Scale $(4;\ 4;\ 0{,}4)$.
+  \item Una \textbf{pedana} è un blocco su cui si cammina: la tabella dice anche la quota del piano (``si cammina a Z = \dots''). La Z della posizione è già il centro (piano meno metà spessore).
+  \item \textbf{yaw} è la rotazione intorno a Z (Details $\rightarrow$ Rotation, terzo valore).
+\end{itemize}
+
+\subsection{I blocchi: Cube dell'engine o BlockOut Tools}
+
+I livelli C++ usano il \var{Blockout\_Box} del plugin BlockOut Tools (già attivo nel progetto). Per voi è più semplice e identico nelle misure usare il \textbf{Cube dell'engine} (\nodo{Place Actors} $\rightarrow$ \nodo{Shapes} $\rightarrow$ \nodo{Cube}): la sua origine è il centro, quindi la posizione delle tabelle va scritta così com'è. Il colore lo dà un materiale già pronto in \texttt{/Game/AIV/Materiali}:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Colore nei livelli C++ & Significato & Materiale da usare \\
+\midrule
+grigio chiaro & percorso & \var{MI\_AIV\_Percorso} \\
+grigio scuro & percorso (alternato) & \var{MI\_AIV\_PercorsoScuro} \\
+arancio & si salta / si interagisce & \var{MI\_AIV\_Salto} \\
+blu & muro del wall run (tag \var{WallRun}) & \var{MI\_AIV\_Muro} \\
+rosso & pericolo (colonne delle torrette) & \var{MI\_AIV\_Pericolo} \\
+verde & traguardo & \var{MI\_AIV\_Traguardo} \\
+marrone & ripari & \var{MI\_AIV\_LegnoScuro} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Il materiale si mette trascinandolo dal Content Browser sul cubo, o in Details $\rightarrow$ \emph{Materials} $\rightarrow$ \emph{Element 0}. I materiali \var{MI\_AIV\_*} sono ``triplanari'': la griglia ha la stessa misura su ogni faccia comunque scaliate il cubo. Se preferite il Blockout\_Box: impostate \emph{Box Size} con le misure della tabella e controllate con lo strumento \emph{Measure} (tasto centrale del mouse trascinato nel viewport ortografico) che il centro sia dove deve: il suo pivot non è al centro.
+
+\attenzione{I muri blu del wall run devono avere il \textbf{tag} \var{WallRun}: Details $\rightarrow$ cercate ``Tags'' $\rightarrow$ \emph{Actor} $\rightarrow$ \emph{Tags} $\rightarrow$ \nodo{+} $\rightarrow$ \var{WallRun}. Senza tag il personaggio non ci corre sopra (guida Ninja, capitolo 3.4).}
+
+\subsection{Gli altri asset}
+
+Sono tutti già nel progetto: i materiali in \texttt{/Game/AIV/Materiali} (\var{MI\_AIV\_Erba}, \var{\_Acqua}, \var{\_Lava}, \var{\_Moneta}, \var{\_Abilita}\dots), i suoni in \texttt{/Game/Audio} (\var{SfxPlatformMoving\_Cue}, \var{Rock\_Cue}), le piante in \texttt{/Game/Meshes} (\var{SM\_Chestnut\_4}, \var{SM\_Groundplant\_12}), le forme in \texttt{/Engine/BasicShapes} (per vederle nel Content Browser: \emph{Settings} $\rightarrow$ \emph{Show Engine Content}).
+
+\subsection{I Blueprint del personaggio (dalla guida Ninja)}
+
+I livelli Blueprint hanno bisogno del vostro personaggio e della vostra ``memoria'' del gioco. Sono tutti spiegati nodo per nodo in \texttt{Docs/Blueprint\_Ninja}:
+
+\begin{center}
+\begin{tabularx}{\linewidth}{lX}
+\toprule
+Asset & Capitolo della guida Ninja \\
+\midrule
+\var{GI\_Platform} (vite, monete, abilità, salvataggio) & 2 \\
+\var{BP\_Eroe} con \var{AC\_Movimento} (coyote, doppio salto, wall run, jetpack) & 3 \\
+\var{AC\_Torcia} (prima persona con la rotella, batteria) & 4 \\
+\var{AC\_PostoSicuro} (tre vite, ritorno al posto sicuro) & 5 \\
+\var{AC\_Casse} e \var{BP\_Cassa} (generatore di casse) & 6 \\
+\var{WBP\_HUD} & 12 \\
+\var{GM\_Platform}: Default Pawn Class = \var{BP\_Eroe}, HUD/Widget & 1 \\
+\var{BPI\_Interagibile}, \var{BPI\_Attivabile} (interfacce) & 9 \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Il consiglio è di costruire il personaggio \emph{prima} dei livelli, almeno movimento e vite: un livello senza un personaggio che salta come quello C++ non si può collaudare (le distanze sono tarate su salto 650, doppio salto 600, wall run 650).
+
+\subsection{Dove mettere i file}
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Cartella & Cosa \\
+\midrule
+\texttt{Content/Maps} & \var{L\_GD13\_Livello1\_BP}, \var{\_2\_BP}, \var{\_3\_BP} \\
+\texttt{Content/Blueprints/Livelli/Zone} & \var{BP\_Zona} e figli \\
+\texttt{Content/Blueprints/Livelli/Pickup} & \var{BP\_Pickup} e figli \\
+\texttt{Content/Blueprints/Livelli/Congegni} & interruttori, attivabili, piattaforme, trampolino \\
+\texttt{Content/Blueprints/Livelli/Ostacoli} & torretta, proiettile, barra rotante \\
+\texttt{Content/Blueprints/Livelli/Gym} & cresce con la distanza, cambia modello, presenza casuale \\
+\texttt{Content/Blueprints/Livelli/Ambiente} & mulino, staccionata, spargi, luce tremolante, casse fisiche \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% =====================================================================
+\section{Creare un livello da zero}
+
+Questa è la procedura, uguale per i tre livelli. La si fa una volta per livello, poi si riempiono le tabelle una riga alla volta.
+
+\subsection{Il file del livello}
+\begin{enumerate}
+  \item \nodo{File} $\rightarrow$ \nodo{New Level\dots} $\rightarrow$ \nodo{Empty Level} (completamente vuoto, senza luci: le mettiamo noi; non \emph{Empty Open World}, che crea un mondo a celle).
+  \item \nodo{File} $\rightarrow$ \nodo{Save Current Level As\dots} $\rightarrow$ cartella \texttt{Maps}, nome \var{L\_GD13\_Livello1\_BP}.
+  \item \nodo{Window} $\rightarrow$ \nodo{World Settings} $\rightarrow$ \emph{GameMode Override} = \var{GM\_Platform}. (Nei livelli C++ qui c'è \var{PlatformerGameMode}.)
+\end{enumerate}
+
+\subsection{Luce e atmosfera}
+
+Ogni livello comincia con la sezione ``Luce, atmosfera e partenza'' della sua tabella. Gli actor si trovano in \nodo{Place Actors} (\tasto{Shift}+\tasto{1}) $\rightarrow$ \nodo{Lights} e \nodo{Visual Effects}, oppure tutti insieme con \nodo{Window} $\rightarrow$ \nodo{Env.~Light Mixer} $\rightarrow$ \emph{Create Sky Light}, \emph{Atmospheric Light}, \emph{Sky Atmosphere}, \emph{Height Fog}. Il \emph{Post Process Volume}: una volta piazzato, in Details cercate ``Unbound'' e spuntate \emph{Infinite Extent}; poi ogni valore (per esempio \emph{Bloom} $\rightarrow$ \emph{Intensity}) si attiva con la sua casella prima di cambiarlo. Infine \nodo{Player Start} (in \nodo{Place Actors} $\rightarrow$ \nodo{Basic}) alla posizione indicata.
+
+\subsection{Le righe delle tabelle}
+
+\begin{description}
+  \item[Cubo, Pedana] \nodo{Cube}; Location = posizione, Scale = misure/100, materiale dalla colonna \emph{Impostazioni}. Se c'è \emph{Tag: WallRun}, aggiungete il tag.
+  \item[Static Mesh] trascinate la mesh indicata dal Content Browser; Location, Rotation (yaw) e Scale come in tabella. ``Collision: No Collision'' si imposta in Details $\rightarrow$ \emph{Collision Presets}.
+  \item[Text Render] \nodo{Place Actors} $\rightarrow$ cercate \emph{Text Render}. Nei Details: \emph{Text} (per andare a capo dentro il testo: \tasto{Shift}+\tasto{Invio}; nella tabella l'a capo è ``/''), \emph{World Size}, \emph{Text Render Color}, \emph{Horizontal Alignment} = Center, Rotation yaw 180 (così il testo guarda chi arriva da $-$X).
+  \item[Decal] \nodo{Place Actors} $\rightarrow$ \emph{Decal Actor}; Rotation e \emph{Decal Size} come in tabella, \emph{Decal Material} indicato.
+  \item[Point Light, Spot Light] Mobility \emph{Movable}; \emph{Intensity Units} = Candelas; Intensity, \emph{Light Color}, \emph{Attenuation Radius}; per lo spot anche \emph{Inner/Outer Cone Angle}; ``niente ombre'' = \emph{Cast Shadows} spento.
+  \item[BP\_\dots] trascinate il vostro Blueprint nel livello, scrivete posizione e yaw, poi nei Details, sezione \emph{Default}, i valori delle variabili elencati in \emph{Impostazioni}. Perché compaiano nei Details le variabili devono essere \emph{Instance Editable} (l'occhio aperto accanto alla variabile nel Blueprint). Le variabili non nominate restano al loro default (catalogo, sezione~\ref{sec:catalogo}).
+  \item[Riferimenti] \var{Targets = [Porta\_Doppia]}, \var{ListenTo = [\dots]}: è un array di actor. Nei Details, \nodo{+} per aggiungere un elemento, poi il contagocce e un clic sull'actor nel viewport (o sceglietelo dalla tendina).
+\end{description}
+
+\attenzione{Le zone (\var{BP\_Zona} e figli) si impostano con \var{ZoneExtent}, che è \emph{metà} della misura (come il \emph{Box Extent} di Unreal): \var{ZoneExtent} $(180;\ 180;\ 100)$ è una scatola di $3{,}6 \times 3{,}6 \times 2$\,m.}
+
+\subsection{La scorciatoia: lo scheletro dei livelli con uno script}
+
+Mettere a mano duecento righe è un ottimo esercizio di level design, ma è lungo. Se preferite concentrarvi sui Blueprint, lo script può costruire per voi la \emph{struttura} dei tre livelli \var{\_BP}: blocchi, luci, atmosfera, scritte, decal, piante e Player Start, \emph{senza} nessuna classe C++. Dove andrebbe un actor C++ mette invece un \textbf{segnaposto}: una scritta arancione, visibile solo nell'editor, con il nome del Blueprint da piazzare lì e il nome che deve avere nell'Outliner (cartella \texttt{DaFare}).
+
+\begin{enumerate}
+  \item \emph{Output Log} in modalità Python: \texttt{import gd13\_platformer as g; g.costruisci\_scheletro\_bp()}.
+  \item In ogni livello \var{\_BP}: \emph{World Settings} $\rightarrow$ \emph{GameMode Override} = \var{GM\_Platform}.
+  \item Per ogni segnaposto: piazzate il Blueprint indicato \emph{alla stessa posizione} (selezionate il segnaposto, copiate la \emph{Location} con tasto destro $\rightarrow$ \emph{Copy}, incollatela nel Blueprint), impostate le variabili dalla tabella, poi cancellate il segnaposto. Quando la cartella \texttt{DaFare} è vuota, il livello è finito.
+\end{enumerate}
+
+Lo script \textbf{non sovrascrive} un livello \var{\_BP} che esiste già: per rifarlo, cancellatelo prima a mano.
+
+% =====================================================================
+\section{Il catalogo dei Blueprint}\label{sec:catalogo}
+\addtocontents{toc}{\protect\setcounter{tocdepth}{1}}
+
+Questi sono tutti i Blueprint che compaiono nei tre livelli. Ognuno rifà una classe C++ e ha le \emph{stesse variabili con lo stesso nome} (senza la \var{b} iniziale dei booleani del C++): così le tabelle dei livelli valgono per tutte e due le versioni, e se un comportamento non vi torna potete aprire il file \texttt{.h} indicato e leggere il commento. La logica a nodi è nella guida Ninja, al capitolo indicato.
+
+\subsection*{Quali servono, e dove}
+
+\input{gen_uso}
+
+\textbf{Ordine consigliato.} Prima i quattro padri (\var{BP\_Zona}, \var{BP\_Pickup}, \var{BP\_Interruttore}, \var{BP\_Attivabile}), poi \var{BP\_ZonaCaduta}, \var{BP\_Moneta}, \var{BP\_Traguardo} e \var{BP\_PiattaformaMobile}: con questi il livello 1 si gioca dall'inizio alla fine. Il resto si aggiunge tratto per tratto. I padri si creano con \nodo{Blueprint Class} $\rightarrow$ \nodo{Actor}; i figli con tasto destro sul padre $\rightarrow$ \nodo{Create Child Blueprint Class}.
+
+\input{gen_catalogo}
+
+% =====================================================================
+\addtocontents{toc}{\protect\setcounter{tocdepth}{2}}
+\section{Livello 1 -- ``Si impara''}
+
+Mattina, un'isola sull'acqua. Si impara a muoversi e si raccolgono le prime due abilità: il doppio salto (serve per la parete di 3,3\,m) e il generatore di casse (serve per la parete di 4,6\,m, che nemmeno il doppio salto supera). Il ponte fortunato c'è solo nel 35\% delle partite: altrimenti si passa dai sassi. Cadere in acqua costa una vita.
+
+Livello: \var{L\_GD13\_Livello1\_BP}. Traguardo $\rightarrow$ \var{L\_GD13\_Livello2\_BP}.
+
+\input{gen_livello1}
+
+\textbf{Collaudo del livello 1.} (1) La pedana a pressione apre la porta e accende la lampada. (2) Senza doppio salto P7 non si raggiunge; dopo averlo preso, sì. (3) Davanti a P12 bastano due casse una sull'altra e un doppio salto. (4) Riavviate qualche volta: il ponte a volte c'è e a volte no, e i sassi portano comunque avanti. (5) Cadete in acqua tre volte: game over e si ricomincia da \var{L\_GD13\_Livello1\_BP}.
+
+% =====================================================================
+\section{Livello 2 -- ``Ostacoli e congegni''}
+
+Pomeriggio. Trampolino, torretta con i ripari, piattaforme che crollano, leva e ascensore, la sezione del wall run fra due muri blu (con un pavimento e una pedana per tornare su se si cade), lava da 10\,HP al secondo, la sbarra che spinge, il ghiaccio o il ponte a pagamento, il jetpack per il salto lunghissimo, le piattaforme che rimpiccioliscono e la torretta i cui proiettili fanno ripartire il livello.
+
+Livello: \var{L\_GD13\_Livello2\_BP}. Traguardo $\rightarrow$ \var{L\_GD13\_Livello3\_BP}.
+
+\input{gen_livello2}
+
+\textbf{Collaudo del livello 2.} (1) Il trampolino porta su P2. (2) La leva (\tasto{E}) fa salire l'ascensore fino a P5. (3) Si corre sul Muro\_A, si salta sul Muro\_B, si arriva a P6; cadendo, la pedana di ritorno rilancia su P5. (4) Nella lava la vita scende di 10 al secondo. (5) Con 5 monete il negozio alza il ponte. (6) Con il jetpack (salto tenuto premuto) si arriva a P11 da P10. (7) Un proiettile della torretta mortale fa ripartire il livello.
+
+% =====================================================================
+\section{Livello 3 -- ``Di notte, a tempo''}
+
+Notte con la luna e la nebbia, 150 secondi. Piattaforma laterale, portale, gravità ridotta, sbarra che uccide (si salta), wall run, torretta che anticipa il movimento, il tunnel buio da fare in prima persona con la torcia, la piattaforma che cambia forma ogni secondo e la combo finale: wall run, jetpack, casse e doppio salto. Il traguardo riporta al menu e azzera le morti.
+
+Livello: \var{L\_GD13\_Livello3\_BP}. Traguardo $\rightarrow$ \var{L\_GD13\_Menu}.
+
+\input{gen_livello3}
+
+\textbf{Collaudo del livello 3.} (1) Il timer parte e, a zero, il livello riparte. (2) Il portale porta su P2\_Luna; nella zona arancione si salta molto più lontano. (3) Toccare la sbarra mortale fa ripartire il livello. (4) Nel tunnel, con la rotella avanti si entra in prima persona e si accende la torcia; le batterie la ricaricano. (5) La piattaforma che cambia forma si attraversa quando è un cubo. (6) Combo: dal muro blu si salta, si tiene premuto per il jetpack fino a P12, poi casse e doppio salto fino al traguardo.
+
+% =====================================================================
+\section{Quando avete finito}
+
+\begin{itemize}
+  \item Dal menu scegliete \textbf{Blueprints}: deve partire \var{L\_GD13\_Livello1\_BP}, e i traguardi devono portare a \var{\_2\_BP}, \var{\_3\_BP} e infine al menu.
+  \item Giocate le due versioni una dopo l'altra: stesse distanze, stessi tempi. Se un salto riesce in una e non nell'altra, il colpevole è quasi sempre il personaggio (Jump Z Velocity, Air Control, gravità), non il livello.
+  \item Se avete usato lo script dello scheletro, la cartella \texttt{DaFare} dell'Outliner deve essere vuota.
+  \item \nodo{File} $\rightarrow$ \nodo{Save All}. Con \emph{One File Per Actor} (attivo nei livelli nuovi di UE5) ogni actor è un file in \texttt{Content/\_\_ExternalActors\_\_}: nel commit vanno anche quelli.
+\end{itemize}
+
+\ninja{Le tabelle di questa guida sono generate dallo script che costruisce i livelli C++ (\texttt{strumenti/estrai\_livelli.py} legge \texttt{gd13\_platformer.py} e gli header C++). Se cambiate un livello C++ nello script, rilanciate \texttt{python3 Docs/Blueprint\_Livelli/strumenti/estrai\_livelli.py} e ricompilate questa guida: le due versioni restano allineate.}
+
+\end{document}

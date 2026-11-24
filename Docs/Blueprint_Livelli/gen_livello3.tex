@@ -1,0 +1,112 @@
+%% generato da strumenti/estrai_livelli.py: non modificare a mano
+\subsection{Luce, atmosfera e partenza}
+\begin{itemize}
+\item \nodo{Directional Light} (la luna): Mobility \emph{Movable}, Rotation pitch -35, yaw -120; Intensity 0,4 lux; \emph{Use Temperature} sì, Temperature 9000 K; \emph{Atmosphere Sun Light} sì; Source Angle 0,5.
+\item \nodo{Sky Atmosphere} (valori di default).
+\item \nodo{Sky Light}: Movable, \emph{Real Time Capture} sì, Intensity 0,6.
+\item \nodo{Exponential Height Fog} a Z $-200$: Fog Density 0,03, \emph{Volumetric Fog} sì.
+\item \nodo{Post Process Volume}: \emph{Infinite Extent (Unbound)} sì; spuntate e impostate Auto Exposure Bias 1, Auto Exposure MinBrightness 0,4, Auto Exposure MaxBrightness 1,5, Bloom Intensity 0,9, Vignette Intensity 0,45.
+\item \nodo{Player Start} in (-150; 0; 120), rotazione 0.
+\end{itemize}
+
+\subsection{Partenza e primo tratto}
+\begin{oggetti}
+1 & BP\_\allowbreak{}ZonaCaduta & Zona\_\allowbreak{}Caduta & (9000; 0; -600) & -- & ZoneExtent = (12000; 4000; 150); ShowVisual = no \\
+\nota{il timer: se scade, il livello riparte (lo mostra anche l'HUD)}
+2 & BP\_\allowbreak{}TimerLivello & Timer & (300; 0; 450) & yaw 180 & TimeLimit = 150; WarningThreshold = 20; ShowOnScreen = no; ShowInWorld = sì \\
+3 & Text Render & Scritta & (300; 0; 300) & yaw 180 & ``LIVELLO 3: 150 secondi'', World Size 45, colore (1; 1; 1) \\
+4 & Pedana & P0\_\allowbreak{}Partenza & (0; 0; -20) & (600; 600; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}Percorso, si cammina a Z = 0 \\
+5 & Cubo & Braciere\_\allowbreak{}0\_\allowbreak{}Base & (200; 230; 45) & (50; 50; 90) & MI\_\allowbreak{}AIV\_\allowbreak{}Ferro \\
+6 & Static Mesh & Braciere\_\allowbreak{}0\_\allowbreak{}Braci & (200; 230; 95) & scala (0,45; 0,45; 0,22) & Sphere; MI\_\allowbreak{}AIV\_\allowbreak{}Braci, Cast Shadow no, Collision: No Collision \\
+7 & BP\_\allowbreak{}LuceTremolante & Braciere\_\allowbreak{}0\_\allowbreak{}Luce & (200; 230; 150) & -- & BaseIntensity = 80; FlickerAmount = 0,3; FlickerSpeed = 7; Temperature = 1800; AttenuationRadius = 1400; SourceRadius = 10; PositionJitter = 5; GlowActors = [Braciere\_\allowbreak{}0\_\allowbreak{}Braci] \\
+\nota{piattaforma laterale}
+8 & BP\_\allowbreak{}PiattaformaMobile & Mobile\_\allowbreak{}Laterale & (550; -350; -15) & -- & EndOffset = (0; 700; 0); TravelTime = 2; PauseTime = 0,4; StartDelay = 0; PlatformSize = (250; 250; 30); PlatformMaterial = MI\_\allowbreak{}AIV\_\allowbreak{}Salto; MoveSound = SfxPlatformMoving\_\allowbreak{}Cue \\
+9 & Pedana & P1\_\allowbreak{}Portale & (1000; 0; -20) & (300; 300; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}Salto, si cammina a Z = 0 \\
+\nota{portale: teletrasporto su un'isola alta}
+10 & BP\_\allowbreak{}Teletrasporto & Portale & (1000; 0; 100) & -- & ZoneExtent = (100; 100; 100); Destination = (1500; 0; 600); StopVelocity = sì; Label = ``PORTALE''; VisualMaterial = MI\_\allowbreak{}AIV\_\allowbreak{}Abilita \\
+11 & Point Light & Luce\_\allowbreak{}Portale & (1000; 0; 180) & -- & 60 cd, raggio 600, colore (0,35; 0,6; 1), niente ombre \\
+\nota{gravità ridotta per il salto lungo}
+12 & Pedana & P2\_\allowbreak{}Luna & (2500; 0; 580) & (500; 500; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}Percorso, si cammina a Z = 600 \\
+13 & Cubo & Braciere\_\allowbreak{}2\_\allowbreak{}Base & (2350; -200; 645) & (50; 50; 90) & MI\_\allowbreak{}AIV\_\allowbreak{}Ferro \\
+14 & Static Mesh & Braciere\_\allowbreak{}2\_\allowbreak{}Braci & (2350; -200; 695) & scala (0,45; 0,45; 0,22) & Sphere; MI\_\allowbreak{}AIV\_\allowbreak{}Braci, Cast Shadow no, Collision: No Collision \\
+15 & BP\_\allowbreak{}LuceTremolante & Braciere\_\allowbreak{}2\_\allowbreak{}Luce & (2350; -200; 750) & -- & BaseIntensity = 80; FlickerAmount = 0,3; FlickerSpeed = 7; Temperature = 1800; AttenuationRadius = 1400; SourceRadius = 10; PositionJitter = 5; GlowActors = [Braciere\_\allowbreak{}2\_\allowbreak{}Braci] \\
+16 & BP\_\allowbreak{}ZonaModificatore & Zona\_\allowbreak{}GravitaRidotta & (2600; 0; 700) & -- & ZoneExtent = (150; 200; 100); WalkSpeedMultiplier = 1,1; JumpMultiplier = 1,2; GravityMultiplier = 0,45; DurationAfterExit = 3; Label = ``GRAVITA RIDOTTA''; VisualMaterial = MI\_\allowbreak{}AIV\_\allowbreak{}Salto \\
+17 & Pedana & P3 & (3700; 0; 680) & (400; 400; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}PercorsoScuro, si cammina a Z = 700 \\
+18 & BP\_\allowbreak{}Moneta & Moneta\_\allowbreak{}P3 & (3700; 0; 790) & -- & Value = 1; Material = MI\_\allowbreak{}AIV\_\allowbreak{}Moneta; GlowIntensity = 4; GlowColor = (1; 0,75; 0,3) \\
+\nota{sbarra che uccide: va saltata}
+19 & Pedana & P4\_\allowbreak{}SbarraMortale & (4600; 0; 680) & (800; 800; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}Percorso, si cammina a Z = 700 \\
+20 & BP\_\allowbreak{}BarraRotante & Sbarra\_\allowbreak{}Mortale & (4600; 0; 700) & -- & DegreesPerSecond = 60; BarSize = (600; 30; 30); BarHeight = 50; KillOnTouch = sì \\
+21 & Cubo & Braciere\_\allowbreak{}4\_\allowbreak{}Base & (4950; 350; 745) & (50; 50; 90) & MI\_\allowbreak{}AIV\_\allowbreak{}Ferro \\
+22 & Static Mesh & Braciere\_\allowbreak{}4\_\allowbreak{}Braci & (4950; 350; 795) & scala (0,45; 0,45; 0,22) & Sphere; MI\_\allowbreak{}AIV\_\allowbreak{}Braci, Cast Shadow no, Collision: No Collision \\
+23 & BP\_\allowbreak{}LuceTremolante & Braciere\_\allowbreak{}4\_\allowbreak{}Luce & (4950; 350; 850) & -- & BaseIntensity = 80; FlickerAmount = 0,3; FlickerSpeed = 7; Temperature = 1800; AttenuationRadius = 1400; SourceRadius = 10; PositionJitter = 5; GlowActors = [Braciere\_\allowbreak{}4\_\allowbreak{}Braci] \\
+\nota{wall run veloce (oppure un doppio salto ben fatto)}
+24 & Cubo & Muro\_\allowbreak{}Notte & (5500; 350; 850) & (900; 100; 700) & MI\_\allowbreak{}AIV\_\allowbreak{}Muro, Tag: WallRun \\
+25 & BP\_\allowbreak{}Moneta & Moneta\_\allowbreak{}Muro & (5500; 220; 890) & -- & Value = 1; Material = MI\_\allowbreak{}AIV\_\allowbreak{}Moneta; GlowIntensity = 4; GlowColor = (1; 0,75; 0,3) \\
+26 & Pedana & P5 & (6400; 0; 680) & (800; 800; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}Percorso, si cammina a Z = 700 \\
+27 & Cubo & Braciere\_\allowbreak{}5\_\allowbreak{}Base & (6700; -300; 745) & (50; 50; 90) & MI\_\allowbreak{}AIV\_\allowbreak{}Ferro \\
+28 & Static Mesh & Braciere\_\allowbreak{}5\_\allowbreak{}Braci & (6700; -300; 795) & scala (0,45; 0,45; 0,22) & Sphere; MI\_\allowbreak{}AIV\_\allowbreak{}Braci, Cast Shadow no, Collision: No Collision \\
+29 & BP\_\allowbreak{}LuceTremolante & Braciere\_\allowbreak{}5\_\allowbreak{}Luce & (6700; -300; 850) & -- & BaseIntensity = 80; FlickerAmount = 0,3; FlickerSpeed = 7; Temperature = 1800; AttenuationRadius = 1400; SourceRadius = 10; PositionJitter = 5; GlowActors = [Braciere\_\allowbreak{}5\_\allowbreak{}Braci] \\
+30 & BP\_\allowbreak{}PickupSalute & Cura\_\allowbreak{}P5 & (6300; 250; 790) & -- & HealAmount = 40; Material = MI\_\allowbreak{}AIV\_\allowbreak{}Vita; GlowColor = (0,3; 1; 0,4); Label = ``+VITA'' \\
+\nota{salti da doppio salto}
+31 & Pedana & P6 & (7400; 0; 880) & (300; 300; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}Salto, si cammina a Z = 900 \\
+32 & Pedana & P7 & (8200; 0; 980) & (300; 300; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}Salto, si cammina a Z = 1000 \\
+33 & BP\_\allowbreak{}Moneta & Moneta\_\allowbreak{}P6 & (7400; 0; 990) & -- & Value = 1; Material = MI\_\allowbreak{}AIV\_\allowbreak{}Moneta; GlowIntensity = 4; GlowColor = (1; 0,75; 0,3) \\
+34 & BP\_\allowbreak{}Moneta & Moneta\_\allowbreak{}P7 & (8200; 0; 1090) & -- & Value = 1; Material = MI\_\allowbreak{}AIV\_\allowbreak{}Moneta; GlowIntensity = 4; GlowColor = (1; 0,75; 0,3) \\
+\nota{torretta che anticipa il movimento}
+35 & Pedana & P8 & (9000; 0; 980) & (600; 600; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}Percorso, si cammina a Z = 1000 \\
+36 & Cubo & Riparo\_\allowbreak{}P8 & (9000; 120; 1100) & (80; 260; 200) & MI\_\allowbreak{}AIV\_\allowbreak{}LegnoScuro \\
+37 & Pedana & Torretta\_\allowbreak{}Base & (8800; 700; 700) & (250; 250; 800) & MI\_\allowbreak{}AIV\_\allowbreak{}Pericolo, si cammina a Z = 1100 \\
+38 & BP\_\allowbreak{}Torretta & Torretta\_\allowbreak{}Furba & (8800; 700; 1100) & yaw -90 & Range = 1600; FireInterval = 1,8; ProjectileSpeed = 1600; ProjectileDamage = 20; LeadTarget = sì; BodyMaterial = MI\_\allowbreak{}AIV\_\allowbreak{}Torretta; ProjectileMaterial = MI\_\allowbreak{}AIV\_\allowbreak{}Proiettile \\
+39 & Cubo & Braciere\_\allowbreak{}8\_\allowbreak{}Base & (9200; -230; 1045) & (50; 50; 90) & MI\_\allowbreak{}AIV\_\allowbreak{}Ferro \\
+40 & Static Mesh & Braciere\_\allowbreak{}8\_\allowbreak{}Braci & (9200; -230; 1095) & scala (0,45; 0,45; 0,22) & Sphere; MI\_\allowbreak{}AIV\_\allowbreak{}Braci, Cast Shadow no, Collision: No Collision \\
+41 & BP\_\allowbreak{}LuceTremolante & Braciere\_\allowbreak{}8\_\allowbreak{}Luce & (9200; -230; 1150) & -- & BaseIntensity = 80; FlickerAmount = 0,3; FlickerSpeed = 7; Temperature = 1800; AttenuationRadius = 1400; SourceRadius = 10; PositionJitter = 5; GlowActors = [Braciere\_\allowbreak{}8\_\allowbreak{}Braci] \\
+\nota{ascensore verso il tunnel}
+42 & BP\_\allowbreak{}PiattaformaMobile & Ascensore & (9550; 0; 985) & -- & EndOffset = (0; 0; 500); TravelTime = 2; PauseTime = 1; StartDelay = 0; PlatformSize = (250; 250; 30); PlatformMaterial = MI\_\allowbreak{}AIV\_\allowbreak{}Salto; MoveSound = SfxPlatformMoving\_\allowbreak{}Cue \\
+\end{oggetti}
+
+\subsection{IL TUNNEL BUIO: si passa solo con la torcia (prima persona)}
+\begin{oggetti}
+43 & Pedana & P9\_\allowbreak{}Tunnel\_\allowbreak{}Ingresso & (10000; 0; 1480) & (500; 500; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}PercorsoScuro, si cammina a Z = 1500 \\
+44 & Cubo & Braciere\_\allowbreak{}9\_\allowbreak{}Base & (9850; 200; 1545) & (50; 50; 90) & MI\_\allowbreak{}AIV\_\allowbreak{}Ferro \\
+45 & Static Mesh & Braciere\_\allowbreak{}9\_\allowbreak{}Braci & (9850; 200; 1595) & scala (0,45; 0,45; 0,22) & Sphere; MI\_\allowbreak{}AIV\_\allowbreak{}Braci, Cast Shadow no, Collision: No Collision \\
+46 & BP\_\allowbreak{}LuceTremolante & Braciere\_\allowbreak{}9\_\allowbreak{}Luce & (9850; 200; 1650) & -- & BaseIntensity = 100; FlickerAmount = 0,3; FlickerSpeed = 7; Temperature = 1800; AttenuationRadius = 1400; SourceRadius = 10; PositionJitter = 5; GlowActors = [Braciere\_\allowbreak{}9\_\allowbreak{}Braci] \\
+47 & BP\_\allowbreak{}PickupBatteria & Batteria\_\allowbreak{}Ingresso & (10050; -150; 1590) & -- & BatterySeconds = 15; Material = MI\_\allowbreak{}AIV\_\allowbreak{}Moneta; Label = ``BATTERIA'' \\
+48 & Text Render & Scritta & (10000; 0; 1830) & yaw 180 & ``TUNNEL BUIO / rotellina del mouse AVANTI: prima persona e torcia / (la batteria dura poco: le batterie la ricaricano)'', World Size 28, colore (1; 0,95; 0,5) \\
+49 & Cubo & Tunnel\_\allowbreak{}Tetto & (11400; 0; 1940) & (2200; 840; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}PercorsoScuro \\
+50 & Cubo & Tunnel\_\allowbreak{}Parete\_\allowbreak{}S & (11400; -420; 1570) & (2200; 40; 780) & MI\_\allowbreak{}AIV\_\allowbreak{}PercorsoScuro \\
+51 & Cubo & Tunnel\_\allowbreak{}Parete\_\allowbreak{}N & (11400; 420; 1570) & (2200; 40; 780) & MI\_\allowbreak{}AIV\_\allowbreak{}PercorsoScuro \\
+52 & Pedana & Tunnel\_\allowbreak{}P1 & (10500; 120; 1480) & (260; 260; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}PercorsoScuro, si cammina a Z = 1500 \\
+53 & Pedana & Tunnel\_\allowbreak{}P2 & (10950; -120; 1480) & (260; 260; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}PercorsoScuro, si cammina a Z = 1500 \\
+54 & Pedana & Tunnel\_\allowbreak{}P3 & (11400; 120; 1480) & (260; 260; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}PercorsoScuro, si cammina a Z = 1500 \\
+55 & Pedana & Tunnel\_\allowbreak{}P4 & (11850; -120; 1480) & (260; 260; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}PercorsoScuro, si cammina a Z = 1500 \\
+56 & Pedana & Tunnel\_\allowbreak{}P5 & (12300; 120; 1480) & (260; 260; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}PercorsoScuro, si cammina a Z = 1500 \\
+57 & BP\_\allowbreak{}PickupBatteria & Batteria\_\allowbreak{}Tunnel & (11400; 120; 1590) & -- & BatterySeconds = 15; Material = MI\_\allowbreak{}AIV\_\allowbreak{}Moneta; Label = ``BATTERIA'' \\
+58 & BP\_\allowbreak{}Moneta & Moneta\_\allowbreak{}Tunnel & (11850; -120; 1590) & -- & Value = 3; Material = MI\_\allowbreak{}AIV\_\allowbreak{}Moneta; GlowIntensity = 4; GlowColor = (1; 0,75; 0,3) \\
+\end{oggetti}
+
+\subsection{La piattaforma che cambia modello ogni secondo}
+\begin{oggetti}
+59 & Pedana & P10\_\allowbreak{}DopoTunnel & (12900; 0; 1480) & (500; 500; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}Percorso, si cammina a Z = 1500 \\
+60 & Cubo & Braciere\_\allowbreak{}10\_\allowbreak{}Base & (12800; 200; 1545) & (50; 50; 90) & MI\_\allowbreak{}AIV\_\allowbreak{}Ferro \\
+61 & Static Mesh & Braciere\_\allowbreak{}10\_\allowbreak{}Braci & (12800; 200; 1595) & scala (0,45; 0,45; 0,22) & Sphere; MI\_\allowbreak{}AIV\_\allowbreak{}Braci, Cast Shadow no, Collision: No Collision \\
+62 & BP\_\allowbreak{}LuceTremolante & Braciere\_\allowbreak{}10\_\allowbreak{}Luce & (12800; 200; 1650) & -- & BaseIntensity = 80; FlickerAmount = 0,3; FlickerSpeed = 7; Temperature = 1800; AttenuationRadius = 1400; SourceRadius = 10; PositionJitter = 5; GlowActors = [Braciere\_\allowbreak{}10\_\allowbreak{}Braci] \\
+63 & BP\_\allowbreak{}CambiaModello & Piattaforma\_\allowbreak{}CambiaForma & (13550; 0; 1400) & -- & Interval = 1; Size = (250; 250; 200); Collide = sì; Materials = [MI\_\allowbreak{}AIV\_\allowbreak{}Salto, MI\_\allowbreak{}AIV\_\allowbreak{}Abilita, MI\_\allowbreak{}AIV\_\allowbreak{}Pericolo, MI\_\allowbreak{}AIV\_\allowbreak{}Moneta]; Label = ``CAMBIA FORMA OGNI SECONDO: salta quando e' un cubo'' \\
+64 & Pedana & P11\_\allowbreak{}Combo & (14200; 0; 1480) & (500; 500; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}Percorso, si cammina a Z = 1500 \\
+\end{oggetti}
+
+\subsection{COMBO FINALE: wall run $\rightarrow$ jetpack $\rightarrow$ casse + doppio salto}
+\begin{oggetti}
+65 & Cubo & Muro\_\allowbreak{}Combo & (15000; 350; 1650) & (900; 100; 700) & MI\_\allowbreak{}AIV\_\allowbreak{}Muro, Tag: WallRun \\
+66 & Text Render & Scritta & (14200; 0; 1800) & yaw 180 & ``COMBO: wall run, poi jetpack fino alla piattaforma, / poi casse e doppio salto'', World Size 32, colore (0,5; 0,8; 1) \\
+67 & Pedana & P12\_\allowbreak{}Casse & (16700; 0; 1580) & (600; 600; 40) & MI\_\allowbreak{}AIV\_\allowbreak{}Salto, si cammina a Z = 1600 \\
+68 & Cubo & Braciere\_\allowbreak{}12\_\allowbreak{}Base & (16550; -230; 1645) & (50; 50; 90) & MI\_\allowbreak{}AIV\_\allowbreak{}Ferro \\
+69 & Static Mesh & Braciere\_\allowbreak{}12\_\allowbreak{}Braci & (16550; -230; 1695) & scala (0,45; 0,45; 0,22) & Sphere; MI\_\allowbreak{}AIV\_\allowbreak{}Braci, Cast Shadow no, Collision: No Collision \\
+70 & BP\_\allowbreak{}LuceTremolante & Braciere\_\allowbreak{}12\_\allowbreak{}Luce & (16550; -230; 1750) & -- & BaseIntensity = 80; FlickerAmount = 0,3; FlickerSpeed = 7; Temperature = 1800; AttenuationRadius = 1400; SourceRadius = 10; PositionJitter = 5; GlowActors = [Braciere\_\allowbreak{}12\_\allowbreak{}Braci] \\
+71 & Pedana & P13\_\allowbreak{}Arrivo & (17250; 0; 1610) & (500; 600; 900) & MI\_\allowbreak{}AIV\_\allowbreak{}Traguardo, si cammina a Z = 2060 \\
+72 & Cubo & Braciere\_\allowbreak{}13\_\allowbreak{}Base & (17350; 220; 2105) & (50; 50; 90) & MI\_\allowbreak{}AIV\_\allowbreak{}Ferro \\
+73 & Static Mesh & Braciere\_\allowbreak{}13\_\allowbreak{}Braci & (17350; 220; 2155) & scala (0,45; 0,45; 0,22) & Sphere; MI\_\allowbreak{}AIV\_\allowbreak{}Braci, Cast Shadow no, Collision: No Collision \\
+74 & BP\_\allowbreak{}LuceTremolante & Braciere\_\allowbreak{}13\_\allowbreak{}Luce & (17350; 220; 2210) & -- & BaseIntensity = 100; FlickerAmount = 0,3; FlickerSpeed = 7; Temperature = 1800; AttenuationRadius = 1400; SourceRadius = 10; PositionJitter = 5; GlowActors = [Braciere\_\allowbreak{}13\_\allowbreak{}Braci] \\
+75 & BP\_\allowbreak{}Traguardo & Traguardo & (17300; 0; 2160) & -- & ZoneExtent = (150; 150; 100); NextLevel = L\_\allowbreak{}GD13\_\allowbreak{}Menu; Message = ``Hai finito tutti e tre i livelli! Si torna al menu''; Delay = 1,2; ResetDeathCount = sì; Label = ``TRAGUARDO''; VisualMaterial = MI\_\allowbreak{}AIV\_\allowbreak{}Traguardo \\
+76 & Point Light & Luce\_\allowbreak{}Traguardo & (17300; 0; 2320) & -- & 30 cd, raggio 700, colore (0,4; 1; 0,5), niente ombre \\
+\end{oggetti}
+

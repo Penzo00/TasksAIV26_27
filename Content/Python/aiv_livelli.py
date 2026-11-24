@@ -502,11 +502,15 @@ def camera(nome, pos, pitch, yaw, focale=24.0, fuoco=None, apertura=2.8):
     return nomina(a, nome, "Camere")
 
 
-def rendi_giocabile(pos_partenza, yaw_partenza=0.0):
-    """PlayerStart + GameMode del progetto (che usa BP_Bot2) nel livello aperto."""
+def rendi_giocabile(pos_partenza, yaw_partenza=0.0, game_mode="PlatformerGameMode"):
+    """PlayerStart + GameMode del progetto (che usa BP_Bot2) nel livello aperto.
+    game_mode: nome della classe C++ da usare come GameMode Override,
+    None = non toccare il World Settings (per i livelli Blueprint)."""
     ps = attori.spawn_actor_from_class(unreal.PlayerStart, vec(*pos_partenza), rot(yaw=yaw_partenza))
     nomina(ps, "Partenza", "Gioco")
-    gm = classe_cpp("PlatformerGameMode")
+    if not game_mode:
+        return
+    gm = classe_cpp(game_mode)
     if gm is None:
         return
     mondo = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).get_editor_world()
@@ -517,7 +521,7 @@ def rendi_giocabile(pos_partenza, yaw_partenza=0.0):
         trovati = unreal.GameplayStatics.get_all_actors_of_class(mondo, unreal.WorldSettings)
         impostazioni = trovati[0] if trovati else None
     if impostazioni is None or not imposta(impostazioni, "default_game_mode", gm):
-        avviso("imposta a mano: World Settings > GameMode Override = PlatformerGameMode")
+        avviso("imposta a mano: World Settings > GameMode Override = " + game_mode)
 
 
 def salva():

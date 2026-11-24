@@ -46,6 +46,13 @@ sono Blockout_Box del plugin BlockOut Tools: colore = significato
 (grigio percorso, arancio salto/interazione, blu wall run, rosso pericolo,
 verde traguardo).
 
+IL MENU: L_GD13_Menu è il livello "padre": si sceglie se giocare questi
+livelli (C++) o la loro copia in Blueprint (L_GD13_Livello1_BP, ...2_BP,
+...3_BP), che si costruisce seguendo Docs/Blueprint_Livelli. Nei livelli, M
+torna al menu. costruisci_scheletro_bp() crea, se si vuole, i livelli _BP
+con la sola struttura (blocchi, luci, scritte) e un segnaposto, visibile solo
+nell'editor, dove va messo ogni Blueprint: non usa nessuna classe C++.
+
 COME SI LANCIA
   0. Compilare il progetto (le classi C++ devono esistere) e riavviare
      l'editor una volta (redirect di Scan Labs in DefaultEngine.ini).
@@ -71,6 +78,48 @@ import aiv_materiali as mat
 LIV1 = "/Game/Maps/L_GD13_Livello1"
 LIV2 = "/Game/Maps/L_GD13_Livello2"
 LIV3 = "/Game/Maps/L_GD13_Livello3"
+MENU = "/Game/Maps/L_GD13_Menu"
+
+# I livelli rifatti in Blueprint hanno lo stesso nome con _BP in fondo.
+SUFFISSO_BP = "_BP"
+
+# Per ogni classe C++ dei livelli, il Blueprint che la sostituisce nella
+# versione Blueprint (vedi Docs/Blueprint_Livelli e Docs/Blueprint_Ninja).
+BLUEPRINT = {
+    "FallZone": "BP_ZonaCaduta", "KillZone": "BP_ZonaMortale", "DamageZone": "BP_ZonaDanno",
+    "ModifierZone": "BP_ZonaModificatore", "TeleportZone": "BP_Teletrasporto", "ShopZone": "BP_Negozio",
+    "LevelGoal": "BP_Traguardo", "LevelTimer": "BP_TimerLivello",
+    "CoinPickup": "BP_Moneta", "AbilityPickup": "BP_PickupAbilita", "HealthPickup": "BP_PickupSalute",
+    "BatteryPickup": "BP_PickupBatteria",
+    "MovingPlatform": "BP_PiattaformaMobile", "CrumblingPlatform": "BP_PiattaformaCrolla",
+    "JumpPad": "BP_Trampolino", "SpinningObstacle": "BP_BarraRotante", "Turret": "BP_Torretta",
+    "PressurePlate": "BP_PiastraPressione", "InteractLever": "BP_Leva", "ActivableDoor": "BP_Porta",
+    "ActivableLight": "BP_LuceAttivabile", "ActivableMover": "BP_Ascensore",
+    "ScaleByDistanceActor": "BP_CresceConDistanza", "ModelCyclerActor": "BP_CambiaModello",
+    "RandomPresenceActor": "BP_PresenzaCasuale",
+    "Windmill": "BP_Mulino", "CubeSpawner": "BP_CasseFisiche", "SplineFence": "BP_Staccionata",
+    "ScatterArea": "BP_Spargi", "FlickeringLight": "BP_LuceTremolante",
+}
+
+_MODO_BP = False   # vero mentre costruisci_scheletro_bp() lavora
+
+
+def _percorso(livello):
+    return livello + SUFFISSO_BP if _MODO_BP else livello
+
+
+def _apri(livello):
+    """Crea il livello (nella versione Blueprint: solo se non esiste già)."""
+    percorso = _percorso(livello)
+    if _MODO_BP and unreal.EditorAssetLibrary.does_asset_exist(percorso):
+        a.avviso("%s esiste già: non lo tocco (cancellalo a mano se vuoi rifarlo)" % percorso)
+        return False
+    return a.nuovo_livello(percorso)
+
+
+def _partenza(pos):
+    # nei livelli Blueprint il GameMode lo sceglie chi li costruisce (GM_Platform)
+    a.rendi_giocabile(pos, game_mode=None if _MODO_BP else "PlatformerGameMode")
 
 ALBERO = "/Game/Meshes/Tree/SM_Chestnut_4"
 CESPUGLIO = "/Game/Meshes/Decor/SM_Groundplant_12"
@@ -193,11 +242,11 @@ def isola_alberi(nome, x, y, ex, ey, n, seme, z_top=0.0):
 # ---------------------------------------------------------------------
 
 def livello_1():
-    if not a.nuovo_livello(LIV1):
+    if not _apri(LIV1):
         return
     a.luce_esterna(sole_pitch=-32.0, sole_yaw=-35.0, sole_lux=9.0, temperatura=5200.0, nebbia_densita=0.015)
     a.post_process(auto_exposure_bias=0.3, bloom_intensity=0.5, vignette_intensity=0.25)
-    a.rendi_giocabile((-500, 0, 120))
+    _partenza((-500, 0, 120))
 
     # acqua tutto intorno: chi cade perde una vita e torna all'ultimo posto sicuro
     # (la zona sta SOPRA l'acqua, che ha collisione: si "affoga" prima di toccarla)
@@ -342,11 +391,11 @@ def livello_1():
 # ---------------------------------------------------------------------
 
 def livello_2():
-    if not a.nuovo_livello(LIV2):
+    if not _apri(LIV2):
         return
     a.luce_esterna(sole_pitch=-38.0, sole_yaw=40.0, sole_lux=8.0, temperatura=5600.0)
     a.post_process(auto_exposure_bias=0.2, bloom_intensity=0.6, vignette_intensity=0.3)
-    a.rendi_giocabile((-150, 0, 120))
+    _partenza((-150, 0, 120))
     a.scritta("LIVELLO 2\nostacoli e congegni", (150, 0, 330), yaw=180, dimensione=55)
     caduta_sotto(9500, 25000, z=-600)
 
@@ -483,13 +532,13 @@ def livello_2():
 # ---------------------------------------------------------------------
 
 def livello_3():
-    if not a.nuovo_livello(LIV3):
+    if not _apri(LIV3):
         return
     a.luce_esterna(sole_pitch=-35.0, sole_yaw=-120.0, sole_lux=0.4, temperatura=9000.0,
                    cielo_intensita=0.6, nebbia_densita=0.03, nebbia_volumetrica=True, luna=True)
     a.post_process(auto_exposure_bias=1.0, auto_exposure_min_brightness=0.4,
                    auto_exposure_max_brightness=1.5, bloom_intensity=0.9, vignette_intensity=0.45)
-    a.rendi_giocabile((-150, 0, 120))
+    _partenza((-150, 0, 120))
     caduta_sotto(9000, 24000, z=-600)
 
     # il timer: se scade, il livello riparte (lo mostra anche l'HUD)
@@ -585,16 +634,110 @@ def livello_3():
     braciere("Braciere_12", 16550, -230, tz + 100)
     a.pedana("P13_Arrivo", "Percorso", 17250, 0, tz + 560, 500, 600, spessore=900, tinta="traguardo")
     braciere("Braciere_13", 17350, 220, tz + 560, intensita=100.0)
-    traguardo(17300, 0, tz + 560, LIV1, messaggio="Hai finito tutti e tre i livelli!", azzera=True)
+    traguardo(17300, 0, tz + 560, MENU, messaggio="Hai finito tutti e tre i livelli! Si torna al menu",
+              azzera=True)
     a.salva()
     a.log("Livello 3 creato")
 
 
+# ---------------------------------------------------------------------
+# IL MENU - si sceglie la versione: C++ o Blueprints
+# ---------------------------------------------------------------------
+
+def menu():
+    """Il livello "padre": una piccola scena al tramonto vista da una
+    telecamera fissa, sopra cui l'HUD del menu (APlatformerMenuHUD) disegna i
+    due pulsanti. Nessun personaggio: lo decide APlatformerMenuGameMode."""
+    if not a.nuovo_livello(MENU):
+        return
+    a.luce_esterna(sole_pitch=-9.0, sole_yaw=-150.0, sole_lux=5.0, temperatura=3600.0, nebbia_densita=0.03)
+    a.post_process(auto_exposure_bias=0.4, bloom_intensity=0.8, vignette_intensity=0.4)
+    a.rendi_giocabile((0, 0, 120), game_mode="PlatformerMenuGameMode")
+
+    a.blocco("Acqua", "Ambiente", (1500, 0, -310), (12000, 12000, 20), M["Acqua"])
+    a.pedana("Isola", "Ambiente", 0, 0, 0, 2400, 2400, spessore=300, materiale=M["Erba"])
+    # a sinistra la "via C++" (blu), a destra la "via Blueprint" (verde): due scalinate
+    # di piattaforme che si allontanano verso l'orizzonte
+    for i in range(6):
+        x = 1500 + i * 650
+        a.pedana("Via_Cpp_%d" % i, "Scena/ViaCpp", x, -700 - i * 120, 80 + i * 110, 380, 380,
+                 tinta="muro" if i % 2 else "percorso")
+        a.pedana("Via_BP_%d" % i, "Scena/ViaBP", x, 700 + i * 120, 80 + i * 110, 380, 380,
+                 tinta="traguardo" if i % 2 else "percorso2")
+    a.scritta("C++", (1150, -650, 260), yaw=180, dimensione=160, colore_testo=(0.35, 0.65, 1.0))
+    a.scritta("BP", (1150, 650, 260), yaw=180, dimensione=160, colore_testo=(0.4, 1.0, 0.5))
+    braciere("Braciere_Cpp", 900, -350, 0, intensita=120.0)
+    braciere("Braciere_BP", 900, 350, 0, intensita=120.0)
+    a.spawn_cpp("Windmill", "Mulino", "Scena", (4200, 0, 0), yaw=180, blade_speed=35.0,
+                look_at_player=False, tower_height=1100.0, blade_length=520.0, blades_collide=False,
+                tower_material=M["IntonacoChiaro"], blade_material=M["LegnoChiaro"])
+    a.pedana("Isola_Mulino", "Ambiente", 4200, 0, 0, 1600, 1600, spessore=300, materiale=M["Erba"])
+    a.spawn_cpp("ModelCyclerActor", "Totem", "Scena", (1300, 0, 60), interval=1.0, size=a.vec(110, 110, 120),
+                collide=False, materials=[M["Salto"], M["Abilita"], M["Moneta"], M["Pericolo"]])
+    isola_alberi("Alberi", 0, 0, 1000, 1000, 6, 5)
+
+    # la telecamera del menu: diventa la vista del giocatore appena parte il gioco
+    cam = a.attori.spawn_actor_from_class(unreal.CameraActor, a.vec(-650, 0, 420), a.rot(pitch=-6.0, yaw=0.0))
+    a.imposta(cam, "auto_activate_for_player", unreal.AutoReceiveInput.PLAYER0)
+    c = cam.get_component_by_class(unreal.CameraComponent)
+    if c:
+        a.imposta(c, "field_of_view", 75.0, silenzioso=True)
+        a.imposta(c, "constrain_aspect_ratio", False, silenzioso=True)
+    a.nomina(cam, "Camera_Menu", "Scena")
+    a.salva()
+    a.log("Menu creato: L_GD13_Menu")
+
+
 def costruisci_tutto():
     M.update(mat.tutti())
-    for costruisci_livello in (livello_1, livello_2, livello_3):
+    for costruisci_livello in (menu, livello_1, livello_2, livello_3):
         a.sicuro(costruisci_livello)
-    a.log("Fatto. Apri L_GD13_Livello1 e premi Play.")
+    a.log("Fatto. Apri L_GD13_Menu e premi Play.")
+
+
+# ---------------------------------------------------------------------
+# LIVELLI BLUEPRINT - solo la struttura, con i segnaposto
+# ---------------------------------------------------------------------
+
+def _segnaposto(nome_classe, nome, cartella, pos, yaw=0.0, **proprieta):
+    """Al posto di un actor C++: una scritta visibile SOLO nell'editor che dice
+    quale Blueprint mettere lì (e con quale rotazione). Non usa nessuna classe C++."""
+    bp = BLUEPRINT.get(nome_classe, "BP_" + nome_classe)
+    testo = "%s\n%s" % (bp, nome)
+    if yaw:
+        testo += "\nyaw %g" % yaw
+    t = a.attori.spawn_actor_from_class(unreal.TextRenderActor, a.vec(*pos), a.rot(yaw=180.0))
+    c = t.get_component_by_class(unreal.TextRenderComponent)
+    c.set_text(unreal.Text(testo))
+    c.set_world_size(26.0)
+    c.set_text_render_color(unreal.Color(r=255, g=150, b=40, a=255))
+    a.imposta(c, "horizontal_alignment", unreal.HorizTextAligment.EHTA_CENTER, silenzioso=True)
+    try:
+        t.set_actor_hidden_in_game(True)
+    except Exception:  # noqa: BLE001
+        a.imposta(t, "hidden", True, silenzioso=True)
+    a.nomina(t, "DaFare_" + nome, "DaFare/" + cartella)
+    return None
+
+
+def costruisci_scheletro_bp():
+    """Crea L_GD13_Livello1_BP, 2_BP e 3_BP con i soli blocchi, luci, scritte e
+    decal, più un segnaposto (scritta arancione visibile solo nell'editor) per
+    ogni Blueprint da piazzare. I livelli _BP già esistenti NON vengono toccati.
+    È una scorciatoia facoltativa: la guida spiega come fare tutto a mano."""
+    global _MODO_BP
+    M.update(mat.tutti())
+    originale = a.spawn_cpp
+    _MODO_BP = True
+    a.spawn_cpp = _segnaposto
+    try:
+        for costruisci_livello in (livello_1, livello_2, livello_3):
+            a.sicuro(costruisci_livello)
+    finally:
+        a.spawn_cpp = originale
+        _MODO_BP = False
+    a.log("Scheletri creati. In ogni livello _BP: World Settings > GameMode Override = GM_Platform, "
+          "poi sostituisci i segnaposto della cartella DaFare con i tuoi Blueprint.")
 
 
 if __name__ == "__main__":
