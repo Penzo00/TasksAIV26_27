@@ -120,12 +120,25 @@ def nuovo_livello(percorso):
             avviso("non riesco a mettere da parte %s: lo script si ferma qui, il livello è intatto." % percorso)
             return False
         log("il livello di prima ora è in " + backup)
-    if not livelli.new_level(percorso):
-        avviso("new_level ha fallito per " + percorso)
-        if eal.does_asset_exist(backup) and not eal.does_asset_exist(percorso):
-            eal.rename_asset(backup, percorso)
-        return False
-    return True
+    if livelli.new_level(percorso):
+        log("creato il livello " + percorso)
+        return True
+    # piano B: una mappa vuota salvata con il nome giusto
+    avviso("new_level ha fallito per %s: provo con una mappa vuota salvata con quel nome" % percorso)
+    try:
+        mondo = unreal.EditorLoadingAndSavingUtils.new_blank_map(False)
+        if mondo is not None and unreal.EditorLoadingAndSavingUtils.save_map(mondo, percorso):
+            log("creato il livello " + percorso + " (mappa vuota)")
+            return True
+    except Exception as e:  # noqa: BLE001
+        avviso("anche il piano B ha fallito: %s" % e)
+    if eal.does_asset_exist(backup) and not eal.does_asset_exist(percorso):
+        eal.rename_asset(backup, percorso)
+    unreal.log_error("[AIV] non riesco a creare il livello %s: lo script si ferma qui." % percorso)
+    return False
+
+
+ERRORI = []   # le parti che si sono fermate per un errore (vedi sicuro)
 
 
 def sicuro(funzione, *args, **kwargs):
@@ -135,6 +148,7 @@ def sicuro(funzione, *args, **kwargs):
     try:
         return funzione(*args, **kwargs)
     except Exception:  # noqa: BLE001
+        ERRORI.append(funzione.__name__)
         unreal.log_error("[AIV] errore in %s:\n%s" % (funzione.__name__, traceback.format_exc()))
         try:
             salva()

@@ -358,6 +358,74 @@ def crea_mattoni():
     return m
 
 
+def crea_carta():
+    """Carta da parati PROCEDURALE: un motivo a rombi su una griglia sfalsata,
+    proiettato dal mondo come i mattoni (stessa misura su ogni muro)."""
+    m = _materiale("M_AIV_CartaParati")
+    M_ = unreal
+    wp = _nodo(m, M_.MaterialExpressionWorldPosition, -2200, 0)
+    n = _nodo(m, M_.MaterialExpressionVertexNormalWS, -2200, 300)
+    an = _nodo(m, M_.MaterialExpressionAbs, -2050, 300)
+    _collega(n, "", an, "")
+    px = _maschera(m, wp, True, False, False, -1900, -100)
+    py = _maschera(m, wp, False, True, False, -1900, 0)
+    pz = _maschera(m, wp, False, False, True, -1900, 100)
+    nx = _maschera(m, an, True, False, False, -1900, 250)
+    ny = _maschera(m, an, False, True, False, -1900, 350)
+    # orizzontale: Y sui muri che guardano X, X su quelli che guardano Y
+    ub = _op(m, M_.MaterialExpressionAdd, _op(m, M_.MaterialExpressionMultiply, py, nx, -1750, -50),
+             _op(m, M_.MaterialExpressionMultiply, px, ny, -1750, 50), -1600, 0)
+    passo = _scalare(m, "Passo", 32.0, -1600, 200)
+    u = _op(m, M_.MaterialExpressionDivide, ub, passo, -1450, 0)
+    v = _op(m, M_.MaterialExpressionDivide, pz, passo, -1450, 150)
+    riga = _nodo(m, M_.MaterialExpressionFloor, -1300, 250)
+    _collega(v, "", riga, "")
+    meta = _nodo(m, M_.MaterialExpressionMultiply, -1150, 250, const_b=0.5)
+    _collega(riga, "", meta, "A")
+    sfalsa = _nodo(m, M_.MaterialExpressionFrac, -1000, 250)
+    _collega(meta, "", sfalsa, "")
+    u_s = _op(m, M_.MaterialExpressionAdd, u, sfalsa, -850, 0)
+
+    def centrato(f_in, x, y):
+        f = _nodo(m, M_.MaterialExpressionFrac, x, y)
+        _collega(f_in, "", f, "")
+        d = _nodo(m, M_.MaterialExpressionSubtract, x + 150, y, const_b=0.5)
+        _collega(f, "", d, "A")
+        ab = _nodo(m, M_.MaterialExpressionAbs, x + 300, y)
+        _collega(d, "", ab, "")
+        return ab
+
+    du = centrato(u_s, -700, 0)
+    dv = centrato(v, -700, 150)
+    rombo = _op(m, M_.MaterialExpressionAdd, du, dv, -250, 80)        # 0 al centro, 1 negli angoli
+    dim = _scalare(m, "Motivo", 0.22, -250, 250)
+    diff = _op(m, M_.MaterialExpressionSubtract, rombo, dim, -100, 120)
+    nitido = _nodo(m, M_.MaterialExpressionMultiply, 50, 120, const_b=30.0)
+    _collega(diff, "", nitido, "A")
+    maschera = _nodo(m, M_.MaterialExpressionSaturate, 200, 120)      # 0 = motivo, 1 = fondo
+    _collega(nitido, "", maschera, "")
+    fondo = _vettore(m, "ColoreFondo", (0.85, 0.26, 0.07), 200, -200)
+    motivo = _vettore(m, "ColoreMotivo", (1.0, 0.62, 0.18), 200, -100)
+    finale = _nodo(m, M_.MaterialExpressionLinearInterpolate, 400, 0)
+    _collega(motivo, "", finale, "A")
+    _collega(fondo, "", finale, "B")
+    _collega(maschera, "", finale, "Alpha")
+    # un poco di "carta": la texture dell'intonaco scurisce appena il colore
+    tex = _carica(TEX["intonaco"])
+    if tex is not None:
+        uv = _op(m, M_.MaterialExpressionAppendVector, u, v, -700, 400)
+        campione = _nodo(m, M_.MaterialExpressionTextureSample, -500, 400, texture=tex)
+        _collega(uv, "", campione, "UVs")
+        grana = _nodo(m, M_.MaterialExpressionLinearInterpolate, 200, 400, const_a=0.8, const_b=1.0)
+        _collega(campione, "R", grana, "Alpha")
+        finale = _op(m, M_.MaterialExpressionMultiply, finale, grana, 550, 150)
+    _uscita(finale, "", M_.MaterialProperty.MP_BASE_COLOR)
+    _uscita(_nodo(m, M_.MaterialExpressionConstant, 550, 350, r=0.85), "", M_.MaterialProperty.MP_ROUGHNESS)
+    mel.recompile_material(m)
+    _salva(m)
+    return m
+
+
 # ---------------------------------------------------------------------
 # le istanze
 # ---------------------------------------------------------------------
@@ -397,6 +465,7 @@ def tutti(ricostruisci=False):
     lava = crea_lava()
     dec = crea_decal()
     mat_mattoni = crea_mattoni()
+    mat_carta = crea_carta()
 
     def tri_mi(nome, tex, dim, tinta=(1, 1, 1), lum=1.0, rug=0.75, fisico=PM_ROCCIA):
         return istanza("MI_AIV_" + nome, tri, {"Dimensione": dim, "Luminosita": lum, "Rugosita": rug},
@@ -440,6 +509,7 @@ def tutti(ricostruisci=False):
     m["MattoniScuri"] = istanza("MI_AIV_MattoniScuri", mat_mattoni, {"Larghezza": 20.0, "Altezza": 7.0},
                                 {"ColoreA": (0.12, 0.04, 0.02), "ColoreB": (0.3, 0.12, 0.06),
                                  "ColoreMalta": (0.06, 0.05, 0.04)})
+    m["CartaParati"] = istanza("MI_AIV_CartaParati", mat_carta, {"Passo": 32.0, "Motivo": 0.22})
     m["Fuliggine"] = istanza("MI_AIV_Fuliggine", dec, {"Opacita": 0.8, "Durezza": 1.2}, {"Colore": (0.01, 0.008, 0.006)})
     m["AloneFuoco"] = istanza("MI_AIV_AloneFuoco", dec, {"Opacita": 0.35, "Durezza": 2.0, "Intensita": 0.6},
                               {"Colore": (1.0, 0.45, 0.12)})

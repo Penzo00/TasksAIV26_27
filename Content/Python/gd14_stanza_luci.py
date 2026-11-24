@@ -69,8 +69,9 @@ import aiv_materiali as mat
 #  1. MISURE
 # =====================================================================
 
-LIVELLO = "/Game/Maps/L_GD14_StanzaLuci"
-LIVELLO_BLOCKOUT = "/Game/Maps/L_GD14_Stanza_Blockout"
+# un nome NUOVO: il vecchio L_GD14_StanzaLuci resta com'è, non viene toccato
+LIVELLO = "/Game/Maps/L_GD14_Baita"
+LIVELLO_BLOCKOUT = "/Game/Maps/L_GD14_Baita_Blockout"
 
 LUNGO = 800.0          # interno lungo X (dalla finestra al camino)
 LARGO = 600.0          # interno lungo Y
@@ -95,9 +96,10 @@ ARCO_Z = 80.0           # dove comincia l'arco della bocca
 ARCO_R = 60.0           # raggio della bocca
 MENSOLA_Z = 190.0       # il gradino in cima al corpo del camino (candele)
 
-# Che ora è: "pomeriggio" (sole caldo dalla finestra, come la foto di
-# riferimento) oppure "ora_blu" (fuori è quasi buio, luna fredda).
-ORA = "pomeriggio"
+# Che ora è: "tramonto" (sole basso e rosso, stanza calda e in penombra,
+# come le foto di riferimento), "pomeriggio" (più luce, più colori) oppure
+# "ora_blu" (fuori è quasi buio, luna fredda).
+ORA = "tramonto"
 
 SEME = 7
 
@@ -120,6 +122,9 @@ FUOCO_CD = 130.0
 SOLE_LUX = 40.0
 SOLE_K = 4300.0
 SOLE_PITCH = -20.0
+TRAMONTO_LUX = 12.0
+TRAMONTO_K = 2400.0
+TRAMONTO_PITCH = -9.0
 FUOCO_K = 1850.0
 LUNA_LUX = 2.5
 LUNA_K = 8500.0
@@ -143,6 +148,7 @@ TELECAMERE = [
     dict(nome="Cam_2_Camino", pos=(420, 300, 105), guarda=(770, 300, 75), focale=28.0),
     dict(nome="Cam_3_Controcampo_Finestra", pos=(725, 470, 150), guarda=(0, 230, 135), focale=20.0),
     dict(nome="Cam_4_AngoloLettura", pos=(420, 360, 115), guarda=(610, 545, 85), focale=35.0),
+    dict(nome="Cam_5_DaiPiediDelLetto", pos=(60, 470, 150), guarda=(700, 290, 80), focale=20.0),
 ]
 
 PARTENZA_GIOCATORE = (330.0, 150.0, 100.0)
@@ -164,7 +170,7 @@ TINTE = {"Assi": "percorso2", "Intonaco": "percorso", "IntonacoChiaro": "percors
          "Prato": "traguardo", "Braci": "pericolo", "Fiamma": "pericolo",
          "IntonacoArancio": "percorso", "Perline": "percorso2", "LegnoViola": "muro",
          "TessutoVerde": "traguardo", "TessutoGiallo": "salto", "Mattoni": "riparo",
-         "MattoniScuri": "riparo"}
+         "MattoniScuri": "riparo", "CartaParati": "percorso", "TessutoBlu": "muro"}
 
 
 def log(msg):
@@ -326,22 +332,22 @@ def costruisci_involucro():
     box("Prato", "Esterno", -4000, 4000, -4000, 4000, -45, -25, "Prato")
 
     # muretti sotto le falde (sud y=0, nord y=W)
-    box("Muretto_Sud", "Stanza/Muri", -T, L + T, -T, 0, 0, GRONDA + 5, "IntonacoArancio")
-    box("Muretto_Nord", "Stanza/Muri", -T, L + T, W, W + T, 0, GRONDA + 5, "IntonacoArancio")
+    box("Muretto_Sud", "Stanza/Muri", -T, L + T, -T, 0, 0, GRONDA + 5, "CartaParati")
+    box("Muretto_Nord", "Stanza/Muri", -T, L + T, W, W + T, 0, GRONDA + 5, "CartaParati")
 
     # timpano ovest con la finestra e la porta (muro "a pezzi" intorno ai buchi)
     fy0, fy1 = FINESTRA_Y
     fz0, fz1 = FINESTRA_Z
     py0, py1 = PORTA_Y
     alto = COLMO + 35
-    box("Ovest_1", "Stanza/Muri", -T, 0, -T, fy0, 0, alto, "IntonacoArancio")
-    box("Ovest_SottoFinestra", "Stanza/Muri", -T, 0, fy0, fy1, 0, fz0, "IntonacoArancio")
-    box("Ovest_SopraFinestra", "Stanza/Muri", -T, 0, fy0, fy1, fz1, alto, "IntonacoArancio")
-    box("Ovest_2", "Stanza/Muri", -T, 0, fy1, py0, 0, alto, "IntonacoArancio")
-    box("Ovest_SopraPorta", "Stanza/Muri", -T, 0, py0, py1, PORTA_Z, alto, "IntonacoArancio")
-    box("Ovest_3", "Stanza/Muri", -T, 0, py1, W + T, 0, alto, "IntonacoArancio")
+    box("Ovest_1", "Stanza/Muri", -T, 0, -T, fy0, 0, alto, "CartaParati")
+    box("Ovest_SottoFinestra", "Stanza/Muri", -T, 0, fy0, fy1, 0, fz0, "CartaParati")
+    box("Ovest_SopraFinestra", "Stanza/Muri", -T, 0, fy0, fy1, fz1, alto, "CartaParati")
+    box("Ovest_2", "Stanza/Muri", -T, 0, fy1, py0, 0, alto, "CartaParati")
+    box("Ovest_SopraPorta", "Stanza/Muri", -T, 0, py0, py1, PORTA_Z, alto, "CartaParati")
+    box("Ovest_3", "Stanza/Muri", -T, 0, py1, W + T, 0, alto, "CartaParati")
     # timpano est (dietro il camino)
-    box("Est", "Stanza/Muri", L, L + T, -T, W + T, 0, alto, "IntonacoArancio")
+    box("Est", "Stanza/Muri", L, L + T, -T, W + T, 0, alto, "CartaParati")
 
     # le due falde del tetto: lastre inclinate
     sporgenza = 45.0
@@ -378,9 +384,10 @@ def costruisci_travi():
             p1 = (x, W / 2.0 + dentro[1] * off, COLMO + dentro[2] * off)
             trave("Puntone_%s_%d" % (lato, i), "Stanza/Travi", p0, p1, 14, 18, su)
     # montanti e correnti scuri lungo i muretti: incorniciano l'intonaco arancio
-    for lato, y0, y1 in (("S", 0.0, 14.0), ("N", W - 14.0, W)):
+    # (i montanti che finirebbero dentro un mobile non si mettono)
+    for lato, y0, y1, xs in (("S", 0.0, 14.0, (0.0, 400.0, 600.0)), ("N", W - 14.0, W, (0.0, 200.0, 600.0))):
         box("Corrente_%s" % lato, "Stanza/Travi", -MURO, LUNGO, y0, y1, GRONDA - 14, GRONDA + 4, "Travi")
-        for x in (0.0, 200.0, 400.0, 600.0):
+        for x in xs:
             box("Montante_%s_%d" % (lato, int(x)), "Stanza/Travi", x, x + 16, y0, y1, 0, GRONDA - 14, "Travi")
     for x in (240.0, 540.0):
         zc = 335.0
@@ -552,7 +559,7 @@ def costruisci_soggiorno():
 
     # lampada da terra dietro la poltrona: il paralume NON fa ombra alla sua luce
     prop(SCANLABS + "Decor/SM_Lamp_Pear_Stand", "Lampada_Terra", c, x=650, y=560, yaw=200, ombre=False)
-    prop(SCANLABS + "Decor/SM_Groundplant_12", "Pianta", c, x=45, y=575, adatta=(70, 70, 150))
+    prop(SCANLABS + "Decor/SM_Groundplant_12", "Pianta", c, x=40, y=572, adatta=(60, 56, 150))
 
 
 def costruisci_cucina():
@@ -566,6 +573,14 @@ def costruisci_cucina():
         if not BLOCKOUT:
             forma("Pomello_%d" % i, c, SFERA, (x, 63, 66), (0.04, 0.04, 0.04), a.rot(), "Ottone")
     box("Mensola", c, 60, 320, 0, 26, 135, 139, "LegnoScuro")
+    # alzatina di mattoni tra il piano e la mensola, pentole appese
+    box("Alzatina", c, 40, 340, 0, 3, 90, 135, "Mattoni")
+    box("Barra_Pentole", c, 70, 200, 20, 23, 128, 131, "Ferro" if not BLOCKOUT else "LegnoScuro")
+    for i, (x, r, h) in enumerate(((95, 11, 13), (135, 9, 11), (172, 7, 9))):
+        cilindro("Pentola_%d" % i, c, x, 22, 112 - h, r, h, "Ferro" if not BLOCKOUT else "LegnoScuro",
+                 collisione=False)
+        box("Gancio_%d" % i, c, x - 0.5, x + 0.5, 21, 23, 112, 128, "Ferro" if not BLOCKOUT else "LegnoScuro",
+            collisione=False)
     prop(SCANLABS + "Fruits/SM_Fruitplate", "Piatto_Frutta", c, x=110, y=35, z=90, adatta=(40, 40, 15))
     prop(SCANLABS + "Decor/SM_Glas_Water", "Bicchiere_Acqua", c, x=205, y=30, z=90)
     prop(SCANLABS + "Decor/SM_Box_D", "Scatola_Pane", c, x=290, y=32, z=90, adatta=(50, 45, 35))
@@ -599,7 +614,7 @@ def costruisci_cucina():
 def costruisci_libreria():
     """Libreria bassa sotto la falda nord."""
     c = "Libreria"
-    x0, x1, y0, y1 = 90.0, 430.0, LARGO - 38, LARGO
+    x0, x1, y0, y1 = 300.0, 440.0, LARGO - 38, LARGO
     ripiani = (0.0, 50.0, 100.0, 148.0)
     for i, z in enumerate(ripiani):
         box("Ripiano_%d" % i, c, x0, x1, y0, y1, z, z + 4, "LegnoScuro")
@@ -610,12 +625,12 @@ def costruisci_libreria():
     for z in ripiani[:-1]:
         for xc in ((x0 + xm) / 2.0, (xm + x1) / 2.0):
             prop(SCANLABS + "Books/SM_Books_Mix_%d" % k, "Libri_%d" % k, c, x=xc, y=(y0 + y1) / 2.0, z=z + 4,
-                 adatta=(150, 34, 44), yaw=0.0 if _lungo_x("Books/SM_Books_Mix_%d" % k) else 90.0)
+                 adatta=((x1 - x0) / 2.0 - 10.0, 34, 44), yaw=0.0 if _lungo_x("Books/SM_Books_Mix_%d" % k) else 90.0)
             k = k % 8 + 1
     zt = ripiani[-1] + 4
-    prop(SCANLABS + "Decor/SM_Buddha", "Statuetta", c, x=150, y=(y0 + y1) / 2.0, z=zt, adatta=(30, 30, 35),
+    prop(SCANLABS + "Decor/SM_Buddha", "Statuetta", c, x=325, y=(y0 + y1) / 2.0, z=zt, adatta=(30, 30, 35),
          yaw=-90.0 - FRONTE_SCANLABS)
-    prop(SCANLABS + "Decor/SM_Box_A", "Scatola_Ricordi", c, x=360, y=(y0 + y1) / 2.0, z=zt, yaw=-8, adatta=(60, 34, 30))
+    prop(SCANLABS + "Decor/SM_Box_A", "Scatola_Ricordi", c, x=405, y=(y0 + y1) / 2.0, z=zt, yaw=-8, adatta=(60, 34, 30))
 
     # quadri ai lati della canna fumaria (sul timpano est) e accanto alla finestra
     for nome, mesh, y, z in (("Quadro_A", "Decor/SM_Picture_A", 100, 175), ("Quadro_C", "Decor/SM_Picture_C", 500, 165)):
@@ -625,6 +640,35 @@ def costruisci_libreria():
     prop(SCANLABS + "Decor/SM_Shoe_Boat", "Scarpa_2", "Racconto", x=62, y=398, z=0, yaw=55)
     if not BLOCKOUT:
         a.decal("Orme_Bagnate", M["Pozza"], (70, 420, 4), (10, 35, 55), yaw=-20.0)
+
+
+def costruisci_letto():
+    """Il letto sotto la falda nord, con le colonnine tornite, e il comò."""
+    c = "Letto"
+    x0, x1, y0, y1 = 85.0, 290.0, LARGO - 118, LARGO - 16
+    box("Letto_Telaio", c, x0, x1, y0, y1, 28, 42, "LegnoScuro")
+    box("Letto_Materasso", c, x0 + 8, x1 - 6, y0 + 4, y1 - 4, 42, 62, "IntonacoChiaro")
+    box("Letto_Coperta", c, x0 + 60, x1 - 2, y0 - 2, y1 - 2, 54, 66, "TessutoBlu")
+    box("Letto_Risvolto", c, x0 + 55, x0 + 75, y0 - 1, y1 - 3, 55, 67, "IntonacoChiaro")
+    forma("Cuscino", c, SFERA, (x0 + 30, (y0 + y1) / 2.0, 70), (0.4, 0.75, 0.16), a.rot(), "IntonacoChiaro",
+          collisione=False)
+    # testiera (alta) e pediera (bassa) con colonnine e pomi
+    for lato, x, h in (("Testa", x0, 120.0), ("Piedi", x1 - 8, 80.0)):
+        box("Letto_%s_Pannello" % lato, c, x, x + 8, y0 + 8, y1 - 8, 30, h - 15, "LegnoScuro")
+        for k, y in enumerate((y0 + 5, y1 - 5)):
+            cilindro("Letto_%s_Colonna_%d" % (lato, k), c, x + 4, y, 0, 6, h, "LegnoScuro")
+            forma("Letto_%s_Pomo_%d" % (lato, k), c, SFERA, (x + 4, y, h + 6), (0.16, 0.16, 0.16), a.rot(),
+                  "LegnoScuro")
+    # il comò, sul lato sud tra la cucina e la poltrona
+    box("Como", c, 425, 525, 0, 48, 0, 82, "LegnoScuro")
+    box("Como_Piano", c, 421, 529, 0, 52, 82, 86, "LegnoChiaro")
+    for k, z in enumerate((22.0, 55.0)):
+        box("Como_Cassetto_%d" % k, c, 429, 521, 48, 50, z - 14, z + 14, "LegnoViola")
+        if not BLOCKOUT:
+            for j, x in enumerate((450.0, 500.0)):
+                forma("Como_Pomello_%d_%d" % (k, j), c, SFERA, (x, 52, z), (0.04, 0.04, 0.04), a.rot(), "Ottone")
+    prop(SCANLABS + "Decor/SM_Vase_Flower", "Vaso_Fiore", c, x=445, y=24, z=86, adatta=(30, 30, 70))
+    prop(SCANLABS + "Decor/SM_Glas_Water", "Boccia", c, x=505, y=24, z=86, adatta=(25, 25, 25))
 
 
 def _lungo_x(rel):
@@ -678,8 +722,13 @@ def costruisci_luci():
     #    del telaio) sulle assi del pavimento e, con la nebbia volumetrica,
     #    i raggi nell'aria: è la "lama di luce" della foto di riferimento.
     #    Ora blu: la stessa finestra diventa un controluce freddo.
-    pomeriggio = ORA == "pomeriggio"
-    if pomeriggio:
+    pomeriggio = ORA in ("pomeriggio", "tramonto")
+    if ORA == "tramonto":
+        # il sole è quasi all'orizzonte: rosso, radente, entra in profondità
+        esterna = a.luce_esterna(sole_pitch=TRAMONTO_PITCH, sole_yaw=LUNA_YAW, sole_lux=TRAMONTO_LUX,
+                                 temperatura=TRAMONTO_K, cielo_intensita=0.45, nebbia_densita=0.02,
+                                 nebbia_volumetrica=True)
+    elif pomeriggio:
         esterna = a.luce_esterna(sole_pitch=SOLE_PITCH, sole_yaw=LUNA_YAW, sole_lux=SOLE_LUX,
                                  temperatura=SOLE_K, cielo_intensita=1.0, nebbia_densita=0.02,
                                  nebbia_volumetrica=True)
@@ -701,7 +750,7 @@ def costruisci_luci():
     py0, py1 = PORTA_Y
     a.luce_rect("Porta_LuceEsterna", (-90, (py0 + py1) / 2.0, 110), 0.0, 0.0, 90, 200,
                 intensita=PORTA_CD * (2.0 if pomeriggio else 1.0),
-                temperatura=5500.0 if pomeriggio else PORTA_K, raggio=800.0, porte=40.0,
+                temperatura=(3200.0 if ORA == "tramonto" else 5500.0) if pomeriggio else PORTA_K, raggio=800.0, porte=40.0,
                 cartella="Luci/Esterno")
 
     # 5) LAMPADA DA TERRA - luce pratica dell'angolo lettura. Motivata: la
@@ -726,7 +775,7 @@ def costruisci_luci():
     # post process: esposizione stabile per l'interno, bloom per le fiamme,
     # vignetta per chiudere l'inquadratura, leggera grana
     a.post_process("PostProcess_Stanza", auto_exposure_min_brightness=0.8, auto_exposure_max_brightness=2.5,
-                   auto_exposure_bias=0.0 if ORA == "pomeriggio" else 0.3, bloom_intensity=0.7,
+                   auto_exposure_bias={"pomeriggio": 0.0, "tramonto": 0.2}.get(ORA, 0.3), bloom_intensity=0.7,
                    vignette_intensity=0.45, film_grain_intensity=0.15, white_temp=6300.0)
 
 
@@ -768,10 +817,12 @@ def costruisci(blockout=False):
     if not a.nuovo_livello(percorso):
         return
     _creati.clear()
+    del a.ERRORI[:]
     # ogni parte è "al sicuro": se una si ferma per un errore (scritto nel
     # log), le altre vengono costruite lo stesso e il livello viene salvato
     for parte in (costruisci_involucro, costruisci_travi, costruisci_finestra_e_porta, costruisci_camino,
                   costruisci_mensole, costruisci_soggiorno, costruisci_cucina, costruisci_libreria,
+                  costruisci_letto,
                   costruisci_esterno):
         a.sicuro(parte)
     if blockout:
@@ -784,7 +835,10 @@ def costruisci(blockout=False):
     a.sicuro(costruisci_telecamere)
     a.rendi_giocabile(PARTENZA_GIOCATORE, PARTENZA_YAW)
     a.salva()
-    log("fatto: %d oggetti. Livello salvato." % len(_creati))
+    if a.ERRORI:
+        avviso("ATTENZIONE: queste parti si sono fermate per un errore (vedi le righe rosse sopra): "
+               + ", ".join(a.ERRORI))
+    log("fatto: %d oggetti. Livello salvato in %s" % (len(_creati), percorso))
 
 
 def rendi_giocabile():
