@@ -89,8 +89,15 @@ PORTA_Z = 210.0
 PORTA_APERTURA = 32.0   # gradi
 
 # camino sul timpano EST (x = LUNGO)
-CAMINO_Y = (190.0, 410.0)
-FOCOLARE_Z = 140.0      # altezza della bocca del camino
+CAMINO_Y = (170.0, 430.0)
+CAMINO_FRONTE = 700.0   # x della facciata del camino
+ARCO_Z = 80.0           # dove comincia l'arco della bocca
+ARCO_R = 60.0           # raggio della bocca
+MENSOLA_Z = 190.0       # il gradino in cima al corpo del camino (candele)
+
+# Che ora è: "pomeriggio" (sole caldo dalla finestra, come la foto di
+# riferimento) oppure "ora_blu" (fuori è quasi buio, luna fredda).
+ORA = "pomeriggio"
 
 SEME = 7
 
@@ -110,6 +117,9 @@ SFERA = a.SFERA
 # =====================================================================
 
 FUOCO_CD = 130.0
+SOLE_LUX = 40.0
+SOLE_K = 4300.0
+SOLE_PITCH = -20.0
 FUOCO_K = 1850.0
 LUNA_LUX = 2.5
 LUNA_K = 8500.0
@@ -151,7 +161,10 @@ _creati = {}
 TINTE = {"Assi": "percorso2", "Intonaco": "percorso", "IntonacoChiaro": "percorso",
          "Pietra": "riparo", "Travi": "salto", "LegnoScuro": "salto", "LegnoChiaro": "salto",
          "LegnoDipinto": "muro", "TessutoRosso": "pericolo", "TessutoOcra": "pericolo",
-         "Prato": "traguardo", "Braci": "pericolo", "Fiamma": "pericolo"}
+         "Prato": "traguardo", "Braci": "pericolo", "Fiamma": "pericolo",
+         "IntonacoArancio": "percorso", "Perline": "percorso2", "LegnoViola": "muro",
+         "TessutoVerde": "traguardo", "TessutoGiallo": "salto", "Mattoni": "riparo",
+         "MattoniScuri": "riparo"}
 
 
 def log(msg):
@@ -313,22 +326,22 @@ def costruisci_involucro():
     box("Prato", "Esterno", -4000, 4000, -4000, 4000, -45, -25, "Prato")
 
     # muretti sotto le falde (sud y=0, nord y=W)
-    box("Muretto_Sud", "Stanza/Muri", -T, L + T, -T, 0, 0, GRONDA + 5, "Intonaco")
-    box("Muretto_Nord", "Stanza/Muri", -T, L + T, W, W + T, 0, GRONDA + 5, "Intonaco")
+    box("Muretto_Sud", "Stanza/Muri", -T, L + T, -T, 0, 0, GRONDA + 5, "IntonacoArancio")
+    box("Muretto_Nord", "Stanza/Muri", -T, L + T, W, W + T, 0, GRONDA + 5, "IntonacoArancio")
 
     # timpano ovest con la finestra e la porta (muro "a pezzi" intorno ai buchi)
     fy0, fy1 = FINESTRA_Y
     fz0, fz1 = FINESTRA_Z
     py0, py1 = PORTA_Y
     alto = COLMO + 35
-    box("Ovest_1", "Stanza/Muri", -T, 0, -T, fy0, 0, alto, "Intonaco")
-    box("Ovest_SottoFinestra", "Stanza/Muri", -T, 0, fy0, fy1, 0, fz0, "Intonaco")
-    box("Ovest_SopraFinestra", "Stanza/Muri", -T, 0, fy0, fy1, fz1, alto, "Intonaco")
-    box("Ovest_2", "Stanza/Muri", -T, 0, fy1, py0, 0, alto, "Intonaco")
-    box("Ovest_SopraPorta", "Stanza/Muri", -T, 0, py0, py1, PORTA_Z, alto, "Intonaco")
-    box("Ovest_3", "Stanza/Muri", -T, 0, py1, W + T, 0, alto, "Intonaco")
+    box("Ovest_1", "Stanza/Muri", -T, 0, -T, fy0, 0, alto, "IntonacoArancio")
+    box("Ovest_SottoFinestra", "Stanza/Muri", -T, 0, fy0, fy1, 0, fz0, "IntonacoArancio")
+    box("Ovest_SopraFinestra", "Stanza/Muri", -T, 0, fy0, fy1, fz1, alto, "IntonacoArancio")
+    box("Ovest_2", "Stanza/Muri", -T, 0, fy1, py0, 0, alto, "IntonacoArancio")
+    box("Ovest_SopraPorta", "Stanza/Muri", -T, 0, py0, py1, PORTA_Z, alto, "IntonacoArancio")
+    box("Ovest_3", "Stanza/Muri", -T, 0, py1, W + T, 0, alto, "IntonacoArancio")
     # timpano est (dietro il camino)
-    box("Est", "Stanza/Muri", L, L + T, -T, W + T, 0, alto, "Intonaco")
+    box("Est", "Stanza/Muri", L, L + T, -T, W + T, 0, alto, "IntonacoArancio")
 
     # le due falde del tetto: lastre inclinate
     sporgenza = 45.0
@@ -343,7 +356,7 @@ def costruisci_involucro():
         centro = ((L) / 2.0, (y_a + y_b) / 2.0 + fuori.y * TETTO / 2.0, (z_a + z_b) / 2.0 + fuori.z * TETTO / 2.0)
         r = unreal.MathLibrary.make_rot_from_xy(a.vec(1, 0, 0), dn)
         forma(nome, "Stanza/Tetto", CUBO, centro, ((L + 2 * sporgenza) / 100.0, lung / 100.0, TETTO / 100.0),
-              r, "LegnoScuro")
+              r, "Perline")
     box("Colmo_Esterno", "Stanza/Tetto", -sporgenza, L + sporgenza, W / 2 - 30, W / 2 + 30, COLMO, COLMO + 40,
         "LegnoScuro")
 
@@ -364,6 +377,11 @@ def costruisci_travi():
             p0 = (x, y_g + dentro[1] * off, GRONDA + dentro[2] * off)
             p1 = (x, W / 2.0 + dentro[1] * off, COLMO + dentro[2] * off)
             trave("Puntone_%s_%d" % (lato, i), "Stanza/Travi", p0, p1, 14, 18, su)
+    # montanti e correnti scuri lungo i muretti: incorniciano l'intonaco arancio
+    for lato, y0, y1 in (("S", 0.0, 14.0), ("N", W - 14.0, W)):
+        box("Corrente_%s" % lato, "Stanza/Travi", -MURO, LUNGO, y0, y1, GRONDA - 14, GRONDA + 4, "Travi")
+        for x in (0.0, 200.0, 400.0, 600.0):
+            box("Montante_%s_%d" % (lato, int(x)), "Stanza/Travi", x, x + 16, y0, y1, 0, GRONDA - 14, "Travi")
     for x in (240.0, 540.0):
         zc = 335.0
         y0 = (zc - GRONDA) / PENDENZA
@@ -413,19 +431,49 @@ def costruisci_finestra_e_porta():
 
 
 def costruisci_camino():
+    """Camino di mattoni: bocca ad arco, corpo che si restringe salendo,
+    focolare a semicerchio davanti. Mattoni = materiale procedurale."""
     L = LUNGO
     cy0, cy1 = CAMINO_Y
+    xf0 = CAMINO_FRONTE
+    ym = (cy0 + cy1) / 2.0
     c = "Camino"
-    box("Focolare", c, L - 150, L, cy0 - 20, cy1 + 20, 0, 8, "Pietra")
-    box("Spalla_S", c, L - 95, L, cy0, cy0 + 50, 8, FOCOLARE_Z, "Pietra")
-    box("Spalla_N", c, L - 95, L, cy1 - 50, cy1, 8, FOCOLARE_Z, "Pietra")
-    box("Fondo_Focolare", c, L - 15, L, cy0 + 50, cy1 - 50, 8, FOCOLARE_Z, "Pietra")
-    box("Mensola_Camino", c, L - 110, L, cy0 - 10, cy1 + 10, FOCOLARE_Z, FOCOLARE_Z + 28, "LegnoScuro")
-    box("Canna_Fumaria", c, L - 85, L, cy0 + 10, cy1 - 10, FOCOLARE_Z + 28, COLMO + 110, "Pietra")
+    # spalle fino all'imposta dell'arco
+    box("Spalla_S", c, xf0, L, cy0, ym - ARCO_R, 0, ARCO_Z, "Mattoni")
+    box("Spalla_N", c, xf0, L, ym + ARCO_R, cy1, 0, ARCO_Z, "Mattoni")
+    # sopra: file orizzontali che lasciano libero il semicerchio della bocca
+    for i, z in enumerate(range(int(ARCO_Z), int(MENSOLA_Z), 10)):
+        dz = z + 5 - ARCO_Z
+        mezzo = math.sqrt(ARCO_R ** 2 - dz ** 2) if dz < ARCO_R else 0.0
+        if mezzo > 0.0:
+            box("Corso_%d_S" % i, c, xf0, L, cy0, ym - mezzo, z, z + 10, "Mattoni")
+            box("Corso_%d_N" % i, c, xf0, L, ym + mezzo, cy1, z, z + 10, "Mattoni")
+        else:
+            box("Corso_%d" % i, c, xf0, L, cy0, cy1, z, z + 10, "Mattoni")
+    box("Fondo_Focolare", c, L - 15, L, ym - ARCO_R, ym + ARCO_R, 0, ARCO_Z + ARCO_R, "MattoniScuri")
+    # l'arco: conci disposti a raggiera, appena sporgenti dalla facciata
+    n = 11
+    for k in range(n):
+        t = math.pi * (k + 0.5) / n
+        radiale = a.vec(0, math.cos(t), math.sin(t))
+        rc = ARCO_R + 13.0
+        centro = (xf0 - 2.0, ym + math.cos(t) * rc, ARCO_Z + math.sin(t) * rc)
+        r = unreal.MathLibrary.make_rot_from_xz(a.vec(1, 0, 0), radiale)
+        forma("Concio_%d" % k, c + "/Arco", CUBO, centro, (0.2, (math.pi * rc / n) / 100.0 * 1.04, 0.26), r,
+              "Mattoni")
+    # il corpo sale e si restringe a gradoni fino al tetto
+    for i, (dx, dy, z0, z1) in enumerate(((15, 20, MENSOLA_Z, 260), (30, 40, 260, 330), (40, 55, 330, COLMO + 110))):
+        box("Canna_%d" % i, c, xf0 + dx, L, cy0 + dy, cy1 - dy, z0, z1, "Mattoni")
+    # focolare a semicerchio davanti alla bocca
+    cilindro("Focolare", c, xf0, ym, 0, 95, 5, "Mattoni")
+    for k in range(9):
+        t = math.pi / 2.0 + math.pi * (k + 0.5) / 9
+        cx, cy = xf0 + math.cos(t) * 95, ym + math.sin(t) * 95
+        forma("Cordolo_%d" % k, c + "/Focolare", CUBO, (cx, cy, 7), (0.28, 0.34, 0.14),
+              a.rot(yaw=math.degrees(t)), "Mattoni")
 
     # il fuoco: ciocchi, braci, fiamme
     xf = L - 55
-    ym = (cy0 + cy1) / 2.0
     tronco("Ciocco_1", c + "/Fuoco", (xf, ym, 18), 85, 8, yaw=90)
     tronco("Ciocco_2", c + "/Fuoco", (xf - 12, ym - 8, 30), 70, 7, yaw=70)
     tronco("Ciocco_3", c + "/Fuoco", (xf + 10, ym + 10, 30), 70, 7, yaw=110)
@@ -435,41 +483,64 @@ def costruisci_camino():
         forma("Fiamma_%d" % i, c + "/Fuoco", CONO, (xf, ym + dy, 34 + h * 50), (0.22, 0.26, h), a.rot(), "Fiamma",
               ombre=False, collisione=False)
 
-    # legna accatastata accanto al camino (racconta: qualcuno l'ha portata dentro)
+    # legna accatastata accanto al camino
     caos = random.Random(SEME)
     i = 0
     for fila, z in enumerate((9, 25, 41)):
         for k in range(4 - fila):
-            tronco("Legna_%d" % i, c + "/Legna", (L - 45 + caos.uniform(-3, 3), cy1 + 70 + k * 17 + fila * 8, z),
+            tronco("Legna_%d" % i, c + "/Legna", (L - 45 + caos.uniform(-3, 3), cy1 + 55 + k * 17 + fila * 8, z),
                    60 + caos.uniform(-6, 6), 8, yaw=caos.uniform(-4, 4))
             i += 1
 
-    # sulla mensola: due candele, una foto, un vaso
-    zm = FOCOLARE_Z + 28
-    for nome, y in (("Candela_S", cy0 + 15), ("Candela_N", cy1 - 25)):
-        cilindro(nome, c + "/Mensola", L - 100, y, zm, 3.5, 20, "IntonacoChiaro")
-        forma(nome + "_Fiamma", c + "/Mensola", SFERA, (L - 100, y, zm + 23), (0.025, 0.025, 0.05), a.rot(),
+    # sul gradino del camino: due candele; sulla canna un quadro appoggiato
+    for nome, y in (("Candela_S", cy0 + 30), ("Candela_N", cy1 - 30)):
+        cilindro(nome, c + "/Mensola", xf0 + 7, y, MENSOLA_Z, 3.5, 20, "IntonacoChiaro")
+        forma(nome + "_Fiamma", c + "/Mensola", SFERA, (xf0 + 7, y, MENSOLA_Z + 23), (0.025, 0.025, 0.05), a.rot(),
               "Fiamma", ombre=False, collisione=False)
-    prop(SCANLABS + "Decor/SM_Photo", "Foto", c + "/Mensola", x=L - 98, y=ym - 40, z=zm, yaw=180.0 - FRONTE_SCANLABS,
-         adatta=(20, 40, 40))
-    prop(SCANLABS + "Decor/SM_Vase_Flower", "Vaso", c + "/Mensola", x=L - 98, y=ym + 45, z=zm, adatta=(22, 30, 60))
+    d = dimensioni(SCANLABS + "Decor/SM_Picture_B")
+    if d is not None:
+        yaw = 0.0 if d[0] < d[1] else 180.0 - FRONTE_SCANLABS
+        prop(SCANLABS + "Decor/SM_Picture_B", "Quadro_Camino", c, xmax=xf0 + 29.5, y=ym, z=263.0, yaw=yaw,
+             adatta=(10, 110, 64))
 
     if not BLOCKOUT:
-        # fuliggine sul fondo del focolare e sul pavimento davanti (UE16: decal)
-        a.decal("Fuliggine_Fondo", M["Fuliggine"], (L - 10, ym, 75), (12, 55, 65), pitch=0.0, yaw=0.0)
-        a.decal("Fuliggine_Mensola", M["Fuliggine"], (L - 108, ym, FOCOLARE_Z + 6), (8, 105, 18), pitch=0.0, yaw=0.0)
-        a.decal("Cenere_Focolare", M["Fuliggine"], (L - 110, ym, 10), (15, 40, 90))
+        a.decal("Fuliggine_Fondo", M["Fuliggine"], (L - 10, ym, 70), (12, 55, 60), pitch=0.0, yaw=0.0)
+        a.decal("Fuliggine_Arco", M["Fuliggine"], (xf0 - 4, ym, ARCO_Z + ARCO_R), (8, 50, 25), pitch=0.0, yaw=0.0)
+        a.decal("Cenere_Focolare", M["Fuliggine"], (xf0 - 40, ym, 8), (10, 35, 70))
+
+
+def costruisci_mensole():
+    """Mensole sul muro del camino, ai due lati, cariche di oggetti."""
+    c = "Mensole"
+    L = LUNGO
+    oggetti = {
+        "S": [("Books/SM_Books_Mix_2", 0.35), ("Decor/SM_Box_B", 0.7), ("Decor/SM_Glas_Wine_B", 0.85),
+              ("Decor/SM_Vase_Flower", 0.4), ("Decor/SM_Photo", 0.75)],
+        "N": [("Books/SM_Books_Mix_5", 0.6), ("Decor/SM_Deco_Bean", 0.25), ("Decor/SM_Box_C", 0.35),
+              ("Fruits/SM_Apple_02", 0.8), ("Decor/SM_Glas_Water", 0.65)],
+    }
+    for lato, y0, y1 in (("S", 25.0, 150.0), ("N", 450.0, 575.0)):
+        for j, z in enumerate((100.0, 150.0)):
+            box("Mensola_%s_%d" % (lato, j), c, L - 30, L, y0, y1, z - 4, z, "LegnoScuro")
+            for k, y in enumerate((y0 + 12, y1 - 12)):
+                box("Mensola_%s_%d_Staffa_%d" % (lato, j, k), c, L - 18, L, y - 2, y + 2, z - 22, z - 4, "LegnoScuro")
+            for k in range(2):
+                rel, fy = oggetti[lato][(j * 2 + k) % len(oggetti[lato])]
+                prop(SCANLABS + rel, "Mensola_%s_%d_Ogg_%d" % (lato, j, k), c, x=L - 15, y=y0 + (y1 - y0) * fy,
+                     z=z, yaw=-90.0 - FRONTE_SCANLABS + 10.0 * k, adatta=(26, 60, 40))
 
 
 def costruisci_soggiorno():
     """Il tappeto davanti al fuoco, due poltrone, il pouf, la lampada da terra."""
     c = "Soggiorno"
     fuoco = (LUNGO - 55, LARGO / 2.0)
-    cilindro("Tappeto", c, 505, 300, 0, 140, 1.2, "TessutoRosso", collisione=False)
-    cilindro("Tappeto_Interno", c, 505, 300, 1.2, 100, 0.8, "TessutoOcra", collisione=False)
-    cilindro("Pouf", c, 500, 300, 0, 28, 40, "TessutoBlu")
+    # tappeto rotondo a cerchi concentrici
+    for i, (rr, chiave) in enumerate(((140, "TessutoVerde"), (110, "TessutoGiallo"), (80, "TessutoVerde"),
+                                      (50, "TessutoGiallo"))):
+        cilindro("Tappeto_%d" % i, c, 490, 300, i * 0.5, rr, 1.2, chiave, collisione=False)
+    cilindro("Pouf", c, 470, 300, 0, 28, 40, "TessutoRosso")
 
-    for nome, pos in (("Poltrona_Nord", (560, 480)), ("Poltrona_Sud", (560, 120))):
+    for nome, pos in (("Poltrona_Nord", (540, 470)), ("Poltrona_Sud", (540, 130))):
         yaw = verso(pos, fuoco) - FRONTE_SCANLABS
         prop(SCANLABS + "Upholstery/SM_Couch_01_Single", nome, c, x=pos[0], y=pos[1], yaw=yaw)
 
@@ -487,10 +558,13 @@ def costruisci_soggiorno():
 def costruisci_cucina():
     """Il lato sud: mobili dipinti, mensola, tavolo da pranzo con panca."""
     c = "Cucina"
-    box("Mobile_Base", c, 40, 340, 0, 60, 0, 85, "LegnoDipinto")
+    box("Mobile_Base", c, 40, 340, 0, 60, 0, 85, "LegnoViola")
     box("Piano_Lavoro", c, 35, 345, 0, 66, 85, 90, "LegnoChiaro")
     for i, x in enumerate((115, 190, 265)):
         box("Anta_Fuga_%d" % i, c, x - 1, x + 1, 60, 61, 8, 80, "LegnoScuro")
+    for i, x in enumerate((95, 135, 170, 210, 245, 285, 320)):
+        if not BLOCKOUT:
+            forma("Pomello_%d" % i, c, SFERA, (x, 63, 66), (0.04, 0.04, 0.04), a.rot(), "Ottone")
     box("Mensola", c, 60, 320, 0, 26, 135, 139, "LegnoScuro")
     prop(SCANLABS + "Fruits/SM_Fruitplate", "Piatto_Frutta", c, x=110, y=35, z=90, adatta=(40, 40, 15))
     prop(SCANLABS + "Decor/SM_Glas_Water", "Bicchiere_Acqua", c, x=205, y=30, z=90)
@@ -599,22 +673,36 @@ def costruisci_luci():
     a.luce_punto("Fuoco_Rimbalzo_SenzaOmbre", (L - 170, fuoco[1], 40), intensita=FUOCO_CD * 0.18,
                  temperatura=FUOCO_K + 200, raggio=650.0, sorgente=60.0, ombre=False, cartella="Luci/Fuoco")
 
-    # 2) LA LUNA - controluce freddo dalla finestra. Disegna la finestra sul
-    #    pavimento e, con la nebbia volumetrica, i "raggi" nell'aria.
-    #    È anche il "sole" dell'atmosfera: colora il cielo di blu profondo.
-    luna = a.luce_esterna(sole_pitch=LUNA_PITCH, sole_yaw=LUNA_YAW, sole_lux=LUNA_LUX, temperatura=LUNA_K,
-                          cielo_intensita=CIELO_INTENSITA, nebbia_densita=0.02, nebbia_volumetrica=True, luna=True)
-    if luna is not None:
-        c = luna.get_component_by_class(unreal.DirectionalLightComponent)
-        a.imposta(c, "volumetric_scattering_intensity", 3.0, silenzioso=True)
+    # 2) IL SOLE (pomeriggio) o LA LUNA (ora blu) - entra dalla finestra.
+    #    Pomeriggio: un sole basso e caldo disegna la finestra (con la croce
+    #    del telaio) sulle assi del pavimento e, con la nebbia volumetrica,
+    #    i raggi nell'aria: è la "lama di luce" della foto di riferimento.
+    #    Ora blu: la stessa finestra diventa un controluce freddo.
+    pomeriggio = ORA == "pomeriggio"
+    if pomeriggio:
+        esterna = a.luce_esterna(sole_pitch=SOLE_PITCH, sole_yaw=LUNA_YAW, sole_lux=SOLE_LUX,
+                                 temperatura=SOLE_K, cielo_intensita=1.0, nebbia_densita=0.02,
+                                 nebbia_volumetrica=True)
+    else:
+        esterna = a.luce_esterna(sole_pitch=LUNA_PITCH, sole_yaw=LUNA_YAW, sole_lux=LUNA_LUX,
+                                 temperatura=LUNA_K, cielo_intensita=CIELO_INTENSITA, nebbia_densita=0.02,
+                                 nebbia_volumetrica=True, luna=True)
+    if esterna is not None:
+        c = esterna.get_component_by_class(unreal.DirectionalLightComponent)
+        a.imposta(c, "volumetric_scattering_intensity", 2.0 if pomeriggio else 3.0, silenzioso=True)
     # 3) IL CIELO (Sky Light, dentro luce_esterna): il colore delle ombre.
-    #    Bassa e fredda: dove il fuoco non arriva la stanza resta blu, non nera.
+    #    Di pomeriggio schiarisce le ombre (la stanza resta leggibile e
+    #    colorata); all'ora blu è bassa e fredda: dove il fuoco non arriva la
+    #    stanza resta blu, non nera.
 
-    # 4) LA PORTA SOCCHIUSA - una rect light fredda fuori dalla porta: una lama
-    #    di luce blu entra sul pavimento e porta l'occhio verso l'uscita.
+    # 4) LA PORTA SOCCHIUSA - una rect light fuori dalla porta: una lama di
+    #    luce entra sul pavimento e porta l'occhio verso l'uscita. Di giorno
+    #    è luce diurna (5500 K), all'ora blu è fredda.
     py0, py1 = PORTA_Y
-    a.luce_rect("Porta_LuceFredda", (-90, (py0 + py1) / 2.0, 110), 0.0, 0.0, 90, 200, intensita=PORTA_CD,
-                temperatura=PORTA_K, raggio=800.0, porte=40.0, cartella="Luci/Esterno")
+    a.luce_rect("Porta_LuceEsterna", (-90, (py0 + py1) / 2.0, 110), 0.0, 0.0, 90, 200,
+                intensita=PORTA_CD * (2.0 if pomeriggio else 1.0),
+                temperatura=5500.0 if pomeriggio else PORTA_K, raggio=800.0, porte=40.0,
+                cartella="Luci/Esterno")
 
     # 5) LAMPADA DA TERRA - luce pratica dell'angolo lettura. Motivata: la
     #    sorgente si vede. Sta sotto/davanti al paralume (che non fa ombra).
@@ -625,9 +713,8 @@ def costruisci_luci():
     _luce_lampada("Lampada_Sospensione", "Luce_Sospensione", SOSPENSIONE_CD, verso_basso=True, sotto=True)
 
     # 7) CANDELE - piccoli accenti caldi sulla mensola (foto, vaso), senza ombre.
-    zm = FOCOLARE_Z + 28
-    for nome, y in (("Candela_S", CAMINO_Y[0] + 15), ("Candela_N", CAMINO_Y[1] - 25)):
-        a.luce_punto("Luce_" + nome, (L - 108, y, zm + 26), intensita=CANDELA_CD, temperatura=2000.0,
+    for nome, y in (("Candela_S", CAMINO_Y[0] + 30), ("Candela_N", CAMINO_Y[1] - 30)):
+        a.luce_punto("Luce_" + nome, (CAMINO_FRONTE + 7, y, MENSOLA_Z + 26), intensita=CANDELA_CD, temperatura=2000.0,
                      raggio=260.0, sorgente=1.0, ombre=False, cartella="Luci/Candele")
 
     # 8) RIEMPIMENTO SULLA LIBRERIA - spot debole senza ombre: rende leggibili
@@ -639,8 +726,8 @@ def costruisci_luci():
     # post process: esposizione stabile per l'interno, bloom per le fiamme,
     # vignetta per chiudere l'inquadratura, leggera grana
     a.post_process("PostProcess_Stanza", auto_exposure_min_brightness=0.8, auto_exposure_max_brightness=2.5,
-                   auto_exposure_bias=0.3, bloom_intensity=0.7, vignette_intensity=0.45,
-                   film_grain_intensity=0.15, white_temp=6300.0)
+                   auto_exposure_bias=0.0 if ORA == "pomeriggio" else 0.3, bloom_intensity=0.7,
+                   vignette_intensity=0.45, film_grain_intensity=0.15, white_temp=6300.0)
 
 
 def _luce_lampada(nome_mesh, nome_luce, intensita, verso_basso=False, sotto=False):
@@ -684,7 +771,8 @@ def costruisci(blockout=False):
     # ogni parte è "al sicuro": se una si ferma per un errore (scritto nel
     # log), le altre vengono costruite lo stesso e il livello viene salvato
     for parte in (costruisci_involucro, costruisci_travi, costruisci_finestra_e_porta, costruisci_camino,
-                  costruisci_soggiorno, costruisci_cucina, costruisci_libreria, costruisci_esterno):
+                  costruisci_mensole, costruisci_soggiorno, costruisci_cucina, costruisci_libreria,
+                  costruisci_esterno):
         a.sicuro(parte)
     if blockout:
         # nel blockout bastano una luce per il fuoco e il cielo, per leggere i volumi

@@ -1,4 +1,4 @@
-# GD14 – Il rifugio all'ora blu
+# GD14 – Il rifugio colorato
 
 Task della lezione 14 di Level Design. La consegna chiede una stanza nuova costruita da zero con la geometria, solo Scan Labs e Starter Content (niente Fab, niente Medieval Village, niente stanza di Scan Labs riciclata), un risultato pseudo-realistico e *significativo*, luci usate con uno scopo **spiegato**, almeno tre screenshot.
 
@@ -6,9 +6,13 @@ Task della lezione 14 di Level Design. La consegna chiede una stanza nuova costr
 
 ## L'idea
 
-La soffitta di un rifugio di montagna, nel momento in cui fa buio. Fuori il blu del crepuscolo e la luna; dentro il fuoco acceso, la lampada vicino alla poltrona, la lampada sul tavolo. **Qualcuno è appena rientrato**: le scarpe bagnate (con le orme) accanto alla porta ancora socchiusa, la legna accatastata vicino al camino, due bicchieri sul tavolino, un libro lasciato aperto.
+La soffitta di un rifugio di montagna, **calda e colorata**, nel tardo pomeriggio. Lo stile prende il *mood* della foto di riferimento (una baita accogliente, quasi da fiaba): muri d'intonaco arancio, soffitto a perline con travi scure, un **camino di mattoni ad arco** con il focolare tondo, credenze dipinte di viola con i pomelli d'ottone, un tappeto tondo a cerchi verdi e gialli, mensole piene di oggetti, una lama di sole che entra dalla finestra sulle assi del pavimento. Pianta, arredo e luci sono progettati da zero: **non** ci sono personaggi, oggetti o loghi del gioco da cui viene la foto.
 
-Il tema visivo è il **contrasto caldo/freddo**: il fuoco (1850 K) è il punto focale e la luce chiave; la finestra e la porta (8500–9500 K) sono il contrappunto freddo. Le immagini di riferimento (interno di baita, tetto spiovente con travi a vista, camino, tappeto, poltrona) hanno dato il **mood**; pianta, arredo e luci sono progettati da zero.
+La storia: **qualcuno è appena rientrato**. Le scarpe bagnate (con le orme) accanto alla porta socchiusa, la legna accatastata vicino al camino, due bicchieri sul tavolino, un libro lasciato aperto.
+
+Il tema di luce è il **contrasto caldo/freddo**: il fuoco (1850 K) è il punto focale; il sole (4300 K) e il cielo dalla finestra e dalla porta sono la luce "di fuori". Con `ORA = "ora_blu"` in cima allo script la stessa stanza diventa notturna (luna 8500 K, cielo basso e blu) e il contrasto si fa più forte.
+
+> Sul "pseudo-realistico" della consegna: le forme e i colori sono volutamente un po' da cartone, ma i materiali sono le texture fotografiche di Scan Labs e la luce è fisica (Lumen, temperature in Kelvin, lux e candele): il risultato è una baita stilizzata illuminata in modo credibile. Se si vuole più realismo basta cambiare i materiali di muri e mobili (`IntonacoArancio` → `Intonaco`, `LegnoViola` → `LegnoDipinto`).
 
 ## Pianta (8 × 6 m, tetto a due falde, colmo a 4,5 m)
 
@@ -19,9 +23,9 @@ Il tema visivo è il **contrasto caldo/freddo**: il fuoco (1850 K) è il punto f
  soc-  |  scarpe                      poltrona N    da terra|
  chiusa|                 ( tappeto  )                 +----+
        |   [ TAVOLO ]    (  pouf    )                 |FUOCO| CAMINO
-FINE-  |    panca        (          )                 +----+ (pietra,
- STRA  |                              poltrona S            |  mensola,
-(luna) |  [===== CUCINA: mobili dipinti, mensola =====]     |  candele)
+FINE-  |    panca        (          )                 +----+ (mattoni,
+ STRA  |                              poltrona S            |  ad arco,
+(sole) |  [===== CUCINA: mobili dipinti, mensola =====]     |  mensole)
        +--------------------------------------------------+
                  y = 0  (falda sud, muretto 1,8 m)
 ```
@@ -34,12 +38,12 @@ L'asse della stanza va dalla **finestra (fredda)** al **camino (caldo)**: entran
 |---|---|---|---|
 | 1 | `Luce_Fuoco_Chiave` | `AFlickeringLight` (C++), point 130 cd, 1850 K, ombre | **Luce chiave e punto focale.** Tutto nella stanza è girato verso il fuoco (le poltrone, il tappeto). Tremola con un rumore di Perlin (intensità e un poco la posizione): le ombre "respirano" come con una fiamma vera, e insieme tremola il materiale emissivo delle braci. |
 | 2 | `Fuoco_Rimbalzo_SenzaOmbre` | Point, debole, raggio sorgente grande, **senza ombre** | La luce che esce dalla bocca del camino e scalda il tappeto e le poltrone. Senza ombre e morbida: non disegna ombre doppie, completa la 1. |
-| 3 | `Luna` | Directional 2,5 lux, 8500 K | **Controluce freddo** dalla finestra: disegna la finestra (con la croce del telaio) sul pavimento e, con la nebbia volumetrica, i raggi nell'aria. È anche il "sole" dell'atmosfera: colora il cielo di blu profondo. Una sola directional nel livello. |
-| 4 | `Cielo` | Sky Light, real time capture, bassa | **Il colore delle ombre**: dove il fuoco non arriva la stanza resta blu, non nera. È il caldo/freddo "gratis". |
-| 5 | `Porta_LuceFredda` | Rect light fuori dalla porta, 9500 K | Una **lama di luce blu** entra dalla porta socchiusa e corre sul pavimento: guida l'occhio verso l'uscita (la luce sui passaggi di Totten/Alexander) e racconta che qualcuno è appena entrato. |
+| 3 | `Sole` (o `Luna`) | Directional: pomeriggio 40 lux, 4300 K, basso (-20°); ora blu 2,5 lux, 8500 K | **La lama di luce dalla finestra**: disegna la finestra (con la croce del telaio) sulle assi del pavimento e, con la nebbia volumetrica, i raggi nell'aria. È anche il sole dell'atmosfera: colora il cielo. Una sola directional nel livello. |
+| 4 | `Cielo` | Sky Light, real time capture | **Il colore delle ombre**: di pomeriggio le schiarisce (i colori della stanza restano leggibili), all'ora blu è bassa e la stanza dove il fuoco non arriva resta blu, non nera. |
+| 5 | `Porta_LuceEsterna` | Rect light fuori dalla porta, 5500 K (9500 K all'ora blu) | Una **lama di luce** entra dalla porta socchiusa e corre sul pavimento: guida l'occhio verso l'uscita (la luce sui passaggi di Totten/Alexander) e racconta che qualcuno è appena entrato. |
 | 6 | `Luce_Lampada_Terra` | Point 22 cd, 2700 K, ombre | **Luce pratica** dell'angolo lettura. È motivata (la lampada si vede), ma la point light è sotto il paralume e la mesh della lampada **non proietta ombre**: niente ombra brutta della lampada sul muro (la "lampada senza ombra" degli esempi di *Lies of P*). |
 | 7 | `Luce_Sospensione` | Point 28 cd, 2700 K, ombre | Un **cerchio di luce sul tavolo**: separa la zona pranzo dal soggiorno e mette in risalto la frutta, secondo punto d'interesse. |
-| 8 | `Luce_Candela_S/N` | Point 2,5 cd, 2000 K, **senza ombre** | Piccoli **accenti** sulla mensola (la foto, il vaso). Senza ombre perché sono minuscole e vicine al muro. |
+| 8 | `Luce_Candela_S/N` | Point 2,5 cd, 2000 K, **senza ombre** | Piccoli **accenti** sul gradino del camino, ai lati del quadro. Senza ombre perché sono minuscole e vicine al muro. |
 | 9 | `Libreria_Riempimento_SenzaOmbre` | Spot debole, 3200 K, **senza ombre** | **Riempimento**: il fuoco prende la libreria di taglio e i dorsi dei libri sarebbero illeggibili. Senza ombre non si nota e non si somma alle ombre delle altre luci. |
 | – | `PostProcess_Stanza` | Post Process Volume, infinito | Esposizione automatica limitata (non "rincorre" le fiamme), bloom per fuoco e candele, vignetta per chiudere l'inquadratura, un filo di grana, bilanciamento del bianco appena caldo. |
 | – | `Nebbia` | Exponential Height Fog **volumetrica** | Rende visibili i raggi della luna e l'alone del fuoco. |
@@ -51,7 +55,8 @@ Tutte le luci sono **Movable** (il progetto usa Lumen con `r.AllowStaticLighting
 Lo script Python dell'editor [`Content/Python/gd14_stanza_luci.py`](../Content/Python/gd14_stanza_luci.py) fa quello che si farebbe a mano, in modo ripetibile. Il risultato è un livello normale, che poi si ritocca nell'editor.
 
 - **Due fasi, come nel level design vero.** `costruisci(blockout=True)` crea `L_GD14_Stanza_Blockout`: solo volumi del plugin **BlockOut Tools** (`Blockout_Box`, colorati per funzione) e i "proxy" dei mobili, per decidere misure e inquadrature. `costruisci()` crea `L_GD14_StanzaLuci`, la stanza finita.
-- **Geometria da zero.** Muri, pavimento, camino e mobili sono `Blockout_Box` con un materiale nostro (*Custom Material*); le falde e le travi inclinate sono cubi orientati. Il muro con finestra e porta è fatto "a pezzi" intorno ai buchi. Le travi a vista (colmo, puntoni ogni metro, due catene) seguono la pendenza del tetto.
+- **Geometria da zero.** Muri, pavimento, camino e mobili sono `Blockout_Box` con un materiale nostro (*Custom Material*); le falde e le travi inclinate sono cubi orientati. Il **camino ad arco** è fatto a corsi di mattoni che lasciano libera la bocca semicircolare, con 11 conci a raggiera sull'arco, la canna a gradoni e il focolare tondo (un cilindro con il cordolo). Il muro con finestra e porta è fatto "a pezzi" intorno ai buchi. Le travi a vista (colmo, puntoni ogni metro, due catene) seguono la pendenza del tetto.
+- **Mattoni procedurali** (`M_AIV_Mattoni` in `aiv_materiali.py`): il disegno dei mattoni, sfalsati a file alterne, con la malta e un colore diverso per ogni mattone, è calcolato dalla posizione nel mondo, quindi i mattoni hanno sempre la stessa misura su ogni pezzo del camino. Larghezza, altezza, malta e colori sono parametri dell'istanza.
 - **Materiali World Aligned** ([`aiv_materiali.py`](../Content/Python/aiv_materiali.py)): le texture di Scan Labs (legno, intonaco, quarzo per la pietra, tessuti, rattan, corteccia) sono proiettate dai tre assi del mondo, quindi non si stirano sui cubi scalati. Le braci e le fiamme hanno un materiale emissivo animato con il rumore (come la lava). Decal per la fuliggine del camino, la cenere e le orme bagnate.
 - **Prop di Scan Labs** (poltrone, lampade, libri, quadri, frutta, bicchieri, scarpe, pianta, castagno e bosco fuori dalla finestra), piazzati per **ingombro** e non per pivot: lo script legge il bounding box della mesh e la appoggia a terra, sul tavolo o contro il muro; se è troppo grande per il posto la rimpicciolisce.
 - **Giocabile**: c'è un PlayerStart e la GameMode del progetto, quindi con **Play** ci si cammina dentro con Bot2.
@@ -75,12 +80,12 @@ Lo script Python dell'editor [`Content/Python/gd14_stanza_luci.py`](../Content/P
 Quattro CineCamera nella cartella `Camere`:
 
 - `Cam_1_Insieme`: dall'angolo della cucina verso il camino, tutta la stanza con tavolo, tappeto e poltrone;
-- `Cam_2_Camino`: il fuoco, la mensola con le candele, le poltrone ai lati;
-- `Cam_3_Controcampo_Finestra`: dal camino verso la finestra e la porta, caldo in primo piano e freddo sullo sfondo;
+- `Cam_2_Camino`: il camino ad arco, le candele, le mensole piene di oggetti, le poltrone ai lati;
+- `Cam_3_Controcampo_Finestra`: dal camino verso la finestra e la porta, il fuoco in primo piano e la luce di fuori sullo sfondo;
 - `Cam_4_AngoloLettura`: la poltrona, la lampada da terra, il tavolino con il libro aperto.
 
 Per ognuna: tasto destro → **Pilot**, **G** per togliere le icone, poi nella Output Log `HighResShot 2`. Le immagini finiscono in `Saved/Screenshots/`.
 
 ## Testo da consegnare insieme agli screenshot
 
-> Ho costruito la soffitta di un rifugio di montagna all'ora blu, quando fuori fa buio e dentro si è appena acceso il fuoco. L'idea di luce è il contrasto caldo/freddo. La luce chiave è il fuoco del camino, che è anche il punto focale: le poltrone e il tappeto sono rivolti verso di lui, e la sua luce tremola con un rumore di Perlin, così le ombre si muovono come con una fiamma vera; una seconda luce senza ombre, morbida, simula il calore che esce dalla bocca del camino. Dalla finestra entra la luna, fredda, che disegna il telaio sul pavimento e, con la nebbia volumetrica, i raggi nell'aria; la Sky Light bassa e blu decide il colore delle ombre. Dalla porta socchiusa entra una lama di luce blu che porta lo sguardo verso l'uscita e racconta che qualcuno è appena rientrato (ci sono le scarpe bagnate e le orme). Le luci pratiche sono motivate: la lampada da terra illumina l'angolo lettura, ma la sua luce è sotto il paralume e la lampada non fa ombra; la lampada a sospensione crea un cerchio di luce sul tavolo da pranzo; due candele accendono la mensola. Infine una spot debole e senza ombre rende leggibili i libri, che il fuoco prende di taglio.
+> Ho costruito la soffitta di un rifugio di montagna, calda e colorata, nel tardo pomeriggio. L'idea di luce è il contrasto tra il caldo del fuoco e la luce di fuori. La luce chiave è il fuoco del camino ad arco, che è anche il punto focale: le poltrone e il tappeto tondo sono rivolti verso di lui, e la sua luce tremola con un rumore di Perlin, così le ombre si muovono come con una fiamma vera; una seconda luce senza ombre, morbida, simula il calore che esce dalla bocca del camino. Dalla finestra entra un sole basso, che disegna il telaio sulle assi del pavimento e, con la nebbia volumetrica, i raggi nell'aria; la Sky Light decide il colore delle ombre. Dalla porta socchiusa entra un'altra lama di luce che porta lo sguardo verso l'uscita e racconta che qualcuno è appena rientrato (ci sono le scarpe bagnate e le orme). Le luci pratiche sono motivate: la lampada da terra illumina l'angolo lettura, ma la sua luce è sotto il paralume e la lampada non fa ombra; la lampada a sospensione crea un cerchio di luce sul tavolo da pranzo; due candele accendono il camino ai lati del quadro. Infine una spot debole e senza ombre rende leggibili i libri, che il fuoco prende di taglio.
