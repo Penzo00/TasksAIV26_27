@@ -263,6 +263,101 @@ def crea_decal():
     return m
 
 
+def crea_mattoni():
+    """Mattoni PROCEDURALI (nel progetto non c'è una texture di mattoni):
+    righe sfalsate di mezzo mattone, fuga di malta, ogni mattone con un colore
+    un po' diverso (un numero "a caso" calcolato dalla sua riga e colonna).
+    Le coordinate vengono dal mondo, come nei materiali World Aligned."""
+    m = _materiale("M_AIV_Mattoni")
+    M_ = unreal
+    wp = _nodo(m, M_.MaterialExpressionWorldPosition, -2600, 0)
+    n = _nodo(m, M_.MaterialExpressionVertexNormalWS, -2600, 300)
+    an = _nodo(m, M_.MaterialExpressionAbs, -2450, 300)
+    _collega(n, "", an, "")
+    px = _maschera(m, wp, True, False, False, -2300, -100)
+    py = _maschera(m, wp, False, True, False, -2300, 0)
+    pz = _maschera(m, wp, False, False, True, -2300, 100)
+    nx = _maschera(m, an, True, False, False, -2300, 250)
+    ny = _maschera(m, an, False, True, False, -2300, 350)
+    nz = _maschera(m, an, False, False, True, -2300, 450)
+    # orizzontale: Y sui muri che guardano X, X sui muri che guardano Y (e sopra)
+    u1 = _op(m, M_.MaterialExpressionMultiply, py, nx, -2100, -50)
+    u2 = _op(m, M_.MaterialExpressionMultiply, px, ny, -2100, 50)
+    u3 = _op(m, M_.MaterialExpressionMultiply, px, nz, -2100, 150)
+    ub = _op(m, M_.MaterialExpressionAdd, _op(m, M_.MaterialExpressionAdd, u1, u2, -1950, 0), u3, -1800, 50)
+    # verticale: Z sui muri, Y sulle facce orizzontali
+    unz = _nodo(m, M_.MaterialExpressionOneMinus, -2100, 300)
+    _collega(nz, "", unz, "")
+    v1 = _op(m, M_.MaterialExpressionMultiply, pz, unz, -1950, 300)
+    v2 = _op(m, M_.MaterialExpressionMultiply, py, nz, -1950, 400)
+    vb = _op(m, M_.MaterialExpressionAdd, v1, v2, -1800, 350)
+
+    bw = _scalare(m, "Larghezza", 24.0, -1800, -150)
+    bh = _scalare(m, "Altezza", 8.0, -1800, 500)
+    u = _op(m, M_.MaterialExpressionDivide, ub, bw, -1650, 0)
+    v = _op(m, M_.MaterialExpressionDivide, vb, bh, -1650, 350)
+    riga = _nodo(m, M_.MaterialExpressionFloor, -1500, 350)
+    _collega(v, "", riga, "")
+    meta = _nodo(m, M_.MaterialExpressionMultiply, -1350, 250, const_b=0.5)
+    _collega(riga, "", meta, "A")
+    sfalsa = _nodo(m, M_.MaterialExpressionFrac, -1200, 250)          # 0 o 0.5
+    _collega(meta, "", sfalsa, "")
+    u_s = _op(m, M_.MaterialExpressionAdd, u, sfalsa, -1050, 0)
+    colonna = _nodo(m, M_.MaterialExpressionFloor, -900, -150)
+    _collega(u_s, "", colonna, "")
+    fu = _nodo(m, M_.MaterialExpressionFrac, -900, 0)
+    _collega(u_s, "", fu, "")
+    fv = _nodo(m, M_.MaterialExpressionFrac, -1350, 450)
+    _collega(v, "", fv, "")
+
+    def bordo(f, dim, x, y):
+        inv = _nodo(m, M_.MaterialExpressionOneMinus, x, y)
+        _collega(f, "", inv, "")
+        mn = _op(m, M_.MaterialExpressionMin, f, inv, x + 150, y)
+        return _op(m, M_.MaterialExpressionMultiply, mn, dim, x + 300, y)   # distanza dal bordo in cm
+
+    eu = bordo(fu, bw, -750, 0)
+    ev = bordo(fv, bh, -1200, 450)
+    e = _op(m, M_.MaterialExpressionMin, eu, ev, -400, 200)
+    malta = _scalare(m, "Malta", 0.9, -400, 350)
+    maschera = _nodo(m, M_.MaterialExpressionSaturate, -100, 250)
+    _collega(_op(m, M_.MaterialExpressionDivide, e, malta, -250, 250), "", maschera, "")
+
+    # un numero "a caso" per mattone: frac(sin(colonna*12.99 + riga*78.23) * 43758)
+    hc = _nodo(m, M_.MaterialExpressionMultiply, -750, -250, const_b=12.9898)
+    _collega(colonna, "", hc, "A")
+    hr = _nodo(m, M_.MaterialExpressionMultiply, -750, -350, const_b=78.233)
+    _collega(riga, "", hr, "A")
+    hs = _nodo(m, M_.MaterialExpressionSine, -450, -300, period=6.2831853)
+    _collega(_op(m, M_.MaterialExpressionAdd, hc, hr, -600, -300), "", hs, "")
+    hm = _nodo(m, M_.MaterialExpressionMultiply, -300, -300, const_b=43758.5453)
+    _collega(hs, "", hm, "A")
+    caso = _nodo(m, M_.MaterialExpressionFrac, -150, -300)
+    _collega(hm, "", caso, "")
+
+    ca = _vettore(m, "ColoreA", (0.55, 0.16, 0.07), -150, -550)
+    cb = _vettore(m, "ColoreB", (0.85, 0.42, 0.18), -150, -450)
+    mattone = _nodo(m, M_.MaterialExpressionLinearInterpolate, 50, -400)
+    _collega(ca, "", mattone, "A")
+    _collega(cb, "", mattone, "B")
+    _collega(caso, "", mattone, "Alpha")
+    cm = _vettore(m, "ColoreMalta", (0.55, 0.45, 0.35), 50, -150)
+    finale = _nodo(m, M_.MaterialExpressionLinearInterpolate, 250, 0)
+    _collega(cm, "", finale, "A")
+    _collega(mattone, "", finale, "B")
+    _collega(maschera, "", finale, "Alpha")
+    _uscita(finale, "", M_.MaterialProperty.MP_BASE_COLOR)
+    # la malta è più ruvida e "incassata" (meno speculare)
+    rug = _nodo(m, M_.MaterialExpressionLinearInterpolate, 250, 200, const_a=0.95, const_b=0.8)
+    _collega(maschera, "", rug, "Alpha")
+    _uscita(rug, "", M_.MaterialProperty.MP_ROUGHNESS)
+    em = _scalare(m, "Intensita", 0.0, 250, 400)
+    _uscita(_op(m, M_.MaterialExpressionMultiply, finale, em, 450, 400), "", M_.MaterialProperty.MP_EMISSIVE_COLOR)
+    mel.recompile_material(m)
+    _salva(m)
+    return m
+
+
 # ---------------------------------------------------------------------
 # le istanze
 # ---------------------------------------------------------------------
@@ -301,6 +396,7 @@ def tutti(ricostruisci=False):
     col = crea_colore()
     lava = crea_lava()
     dec = crea_decal()
+    mat_mattoni = crea_mattoni()
 
     def tri_mi(nome, tex, dim, tinta=(1, 1, 1), lum=1.0, rug=0.75, fisico=PM_ROCCIA):
         return istanza("MI_AIV_" + nome, tri, {"Dimensione": dim, "Luminosita": lum, "Rugosita": rug},
@@ -334,6 +430,16 @@ def tutti(ricostruisci=False):
     m["Ferro"] = col_mi("Ferro", (0.03, 0.03, 0.03), 0.45, 1.0)
     m["Ottone"] = col_mi("Ottone", (0.75, 0.55, 0.25), 0.3, 1.0)
     m["LuceCalda"] = col_mi("LuceCalda", (1.0, 0.65, 0.3), 0.5, 0.0, 6.0)
+    # --- la baita colorata (stanza GD14, ispirata alla foto di riferimento) ---
+    m["IntonacoArancio"] = tri_mi("IntonacoArancio", "intonaco", 260, (1.0, 0.52, 0.16), 1.15, 0.9)
+    m["Perline"] = tri_mi("Perline", "legno", 140, (0.85, 0.55, 0.32), 0.85, 0.6)       # tavole del tetto
+    m["LegnoViola"] = tri_mi("LegnoViola", "legno", 100, (0.32, 0.28, 0.75), 0.9, 0.55)  # credenze dipinte
+    m["TessutoVerde"] = tri_mi("TessutoVerde", "tessuto", 60, (0.12, 0.62, 0.15), 1.1, 0.95)
+    m["TessutoGiallo"] = tri_mi("TessutoGiallo", "tessuto", 60, (1.0, 0.82, 0.12), 1.1, 0.95)
+    m["Mattoni"] = istanza("MI_AIV_Mattoni", mat_mattoni, {"Larghezza": 24.0, "Altezza": 8.0, "Malta": 0.9})
+    m["MattoniScuri"] = istanza("MI_AIV_MattoniScuri", mat_mattoni, {"Larghezza": 20.0, "Altezza": 7.0},
+                                {"ColoreA": (0.12, 0.04, 0.02), "ColoreB": (0.3, 0.12, 0.06),
+                                 "ColoreMalta": (0.06, 0.05, 0.04)})
     m["Fuliggine"] = istanza("MI_AIV_Fuliggine", dec, {"Opacita": 0.8, "Durezza": 1.2}, {"Colore": (0.01, 0.008, 0.006)})
     m["AloneFuoco"] = istanza("MI_AIV_AloneFuoco", dec, {"Opacita": 0.35, "Durezza": 2.0, "Intensita": 0.6},
                               {"Colore": (1.0, 0.45, 0.12)})
