@@ -33,6 +33,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Proiettile")
 	float Damage = 25.f;
 
+	/** Se vero, colpire il personaggio fa ripartire il livello (invece di togliere vita). */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Proiettile")
+	bool bRestartLevelOnHit = false;
+
 	/** Spinta data al personaggio colpito (cm/s). */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Proiettile")
 	float Knockback = 500.f;
@@ -107,6 +111,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Torretta|Proiettile")
 	TSubclassOf<APlatformerProjectile> ProjectileClass;
+
+	/** Se vero, un proiettile che colpisce il personaggio fa ripartire il livello. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Torretta|Proiettile")
+	bool bRestartLevelOnHit = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Torretta|Aspetto")
 	TObjectPtr<UMaterialInterface> BodyMaterial;

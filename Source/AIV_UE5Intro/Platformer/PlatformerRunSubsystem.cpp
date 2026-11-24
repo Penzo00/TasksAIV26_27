@@ -32,6 +32,8 @@ FName UPlatformerRunSubsystem::AbilityToName(EPlatformerAbility Ability)
 	{
 	case EPlatformerAbility::DoubleJump: return FName(TEXT("DoubleJump"));
 	case EPlatformerAbility::WallRun:    return FName(TEXT("WallRun"));
+	case EPlatformerAbility::Jetpack:    return FName(TEXT("Jetpack"));
+	case EPlatformerAbility::CrateSpawner: return FName(TEXT("CrateSpawner"));
 	default:                             return NAME_None;
 	}
 }
@@ -161,7 +163,63 @@ void UPlatformerRunSubsystem::GoToLevel(FName LevelName)
 		return;
 	}
 	bRestartPending = false;
+	Lives = MaxLives;   // livello nuovo: vite piene (riaprire lo STESSO livello invece le lascia come sono)
 	UGameplayStatics::OpenLevel(World, LevelName);
+}
+
+// ---------------------------------------------------------------------
+// Vite
+// ---------------------------------------------------------------------
+
+bool UPlatformerRunSubsystem::LoseLife()
+{
+	if (bRestartPending)
+	{
+		return false;
+	}
+	Lives = FMath::Max(0, Lives - 1);
+	++DeathCount;
+	if (Save)
+	{
+		++Save->TotalDeaths;
+	}
+	if (Lives > 0)
+	{
+		PushMessage(FString::Printf(TEXT("Caduto! Vite rimaste: %d"), Lives), FLinearColor(1.f, 0.6f, 0.2f));
+		return true;
+	}
+	GameOver();
+	return false;
+}
+
+void UPlatformerRunSubsystem::GameOver()
+{
+	if (bRestartPending)
+	{
+		return;
+	}
+	bRestartPending = true;
+	PushMessage(TEXT("GAME OVER - si ricomincia dal primo livello"), FLinearColor(1.f, 0.2f, 0.15f));
+	PendingCoins = 0;
+	if (bGameOverResetsAbilities && Save)
+	{
+		Save->UnlockedAbilities.Empty();
+		SaveProgress();
+	}
+	UWorld* World = GetGameInstance() ? GetGameInstance()->GetWorld() : nullptr;
+	if (World)
+	{
+		World->GetTimerManager().SetTimer(RestartHandle, this, &UPlatformerRunSubsystem::OpenFirstLevel, 2.f, false);
+	}
+	else
+	{
+		OpenFirstLevel();
+	}
+}
+
+void UPlatformerRunSubsystem::OpenFirstLevel()
+{
+	GoToLevel(FirstLevel);
 }
 
 void UPlatformerRunSubsystem::CompleteLevel()

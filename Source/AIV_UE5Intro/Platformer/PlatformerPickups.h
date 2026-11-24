@@ -157,3 +157,20 @@ public:
 protected:
 	virtual bool Collect(ACharacter* Character) override;
 };
+
+/** Batteria per la torcia: ricarica UPlatformerTorchComponent. */
+UCLASS()
+class AIV_UE5INTRO_API ABatteryPickup : public APlatformerPickup
+{
+	GENERATED_BODY()
+
+public:
+	ABatteryPickup();
+
+	/** Secondi di luce aggiunti. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Batteria", meta = (ClampMin = "0.0"))
+	float BatterySeconds = 15.f;
+
+protected:
+	virtual bool Collect(ACharacter* Character) override;
+};

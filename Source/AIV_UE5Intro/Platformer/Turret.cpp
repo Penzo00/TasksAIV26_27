@@ -1,5 +1,7 @@
 #include "Turret.h"
 
+#include "PlatformerRunSubsystem.h"
+
 #include "Components/SceneComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -70,7 +72,15 @@ void APlatformerProjectile::SetProjectileMaterial(UMaterialInterface* Material)
 void APlatformerProjectile::HandleHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	FVector NormalImpulse, const FHitResult& Hit)
 {
-	if (ACharacter* Character = Cast<ACharacter>(OtherActor))
+	if (ACharacter* Character = Cast<ACharacter>(OtherActor); Character && bRestartLevelOnHit)
+	{
+		// la torretta "mortale": colpito = il livello riparte
+		if (UPlatformerRunSubsystem* Run = UPlatformerRunSubsystem::Get(this))
+		{
+			Run->KillPlayerAndRestart(0.4f);
+		}
+	}
+	else if (Character)
 	{
 		UGameplayStatics::ApplyDamage(Character, Damage, nullptr, this, UDamageType::StaticClass());
 		const FVector Push = GetVelocity().GetSafeNormal2D() * Knockback + FVector(0.f, 0.f, Knockback * 0.4f);
@@ -274,6 +284,7 @@ void ATurret::Shoot()
 		return;
 	}
 	Bullet->Damage = ProjectileDamage;
+	Bullet->bRestartLevelOnHit = bRestartLevelOnHit;
 	Bullet->SetProjectileMaterial(ProjectileMaterial);
 	if (UProjectileMovementComponent* Move = Bullet->GetMovement())
 	{

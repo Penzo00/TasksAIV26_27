@@ -24,6 +24,19 @@ protected:
 	virtual void OnCharacterEntered(ACharacter* Character) override;
 };
 
+/**
+ * Zona di caduta (acqua, vuoto): si perde una vita e si torna all'ultimo
+ * posto sicuro (UPlatformerSafeSpotComponent). Con zero vite, game over.
+ */
+UCLASS()
+class AIV_UE5INTRO_API AFallZone : public APlatformerZone
+{
+	GENERATED_BODY()
+
+protected:
+	virtual void OnCharacterEntered(ACharacter* Character) override;
+};
+
 /** Area di danno: toglie vita finché si resta dentro (usa il componente vita). */
 UCLASS()
 class AIV_UE5INTRO_API ADamageZone : public APlatformerZone

@@ -310,7 +310,7 @@ def scritta(testo, pos, yaw=0.0, dimensione=60.0, colore_testo=(1.0, 1.0, 1.0), 
 # aver cambiato le proprietà (fanno quello che fa OnConstruction)
 _RICOSTRUISCI = ("apply_zone_settings", "apply_platform_size", "apply_bar_size", "apply_door_size",
                  "apply_pickup_settings", "apply_turret_settings", "apply_windmill_settings",
-                 "rebuild_fence", "rebuild", "apply_light_settings")
+                 "rebuild_fence", "rebuild", "apply_light_settings", "apply_settings")
 
 
 def ricostruisci(a):

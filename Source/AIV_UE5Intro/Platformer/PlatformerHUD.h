@@ -49,6 +49,8 @@ private:
 	};
 
 	void DrawLine(const FString& Text, const FLinearColor& Color, float X, float& Y, bool bRightAligned);
+	void DrawBar(float Percent, const FLinearColor& Color, float X, float& Y);
+	float PanelHeight = 300.f;
 
 	TArray<FHudMessage> Messages;
 	TWeakObjectPtr<ALevelTimer> Timer;

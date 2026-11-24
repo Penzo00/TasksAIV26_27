@@ -16,8 +16,10 @@ class UPlatformerSaveGame;
 UENUM(BlueprintType)
 enum class EPlatformerAbility : uint8
 {
-	DoubleJump UMETA(DisplayName = "Doppio salto"),
-	WallRun    UMETA(DisplayName = "Wall run e wall jump")
+	DoubleJump   UMETA(DisplayName = "Doppio salto"),
+	WallRun      UMETA(DisplayName = "Wall run e wall jump"),
+	Jetpack      UMETA(DisplayName = "Jetpack"),
+	CrateSpawner UMETA(DisplayName = "Generatore di casse")
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlatformerAbilityUnlocked, EPlatformerAbility, Ability);
@@ -69,6 +71,33 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Platformer")
 	void ResetDeathCount() { DeathCount = 0; }
+
+	// ---------------------------------------------------------------- vite
+
+	/** Vite a ogni inizio livello. Si perde una vita cadendo (si torna all'ultimo posto sicuro). */
+	static constexpr int32 MaxLives = 3;
+
+	/** Il primo livello: con zero vite si ricomincia da qui. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Platformer|Vite")
+	FName FirstLevel = FName(TEXT("L_GD13_Livello1"));
+
+	/** Se vero, il game over toglie anche le abilità sbloccate: si ricomincia davvero da capo. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Platformer|Vite")
+	bool bGameOverResetsAbilities = true;
+
+	UFUNCTION(BlueprintPure, Category = "Platformer|Vite")
+	int32 GetLives() const { return Lives; }
+
+	UFUNCTION(BlueprintPure, Category = "Platformer|Vite")
+	int32 GetMaxLives() const { return MaxLives; }
+
+	/** Toglie una vita. Vero = ne restano (si torna al posto sicuro); falso = game over (già avviato). */
+	UFUNCTION(BlueprintCallable, Category = "Platformer|Vite")
+	bool LoseLife();
+
+	/** Zero vite: messaggio, e si riparte dal primo livello. */
+	UFUNCTION(BlueprintCallable, Category = "Platformer|Vite")
+	void GameOver();
 
 	// ---------------------------------------------------------------- monete
 
@@ -130,7 +159,10 @@ private:
 	UPROPERTY()
 	TObjectPtr<UPlatformerSaveGame> Save;
 
+	void OpenFirstLevel();
+
 	int32 DeathCount = 0;
+	int32 Lives = MaxLives;
 	int32 BankedCoins = 0;
 	int32 PendingCoins = 0;
 	double LevelStartTime = 0.0;

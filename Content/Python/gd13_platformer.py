@@ -26,11 +26,18 @@ Costruisce tre livelli in /Game/Maps:
       delle bruciature), piazza con la sbarra che spinge, ponte di ghiaccio
       (attrito) e un "negozio": paghi 5 monete e sale un ponte sicuro.
 
-  L_GD13_Livello3  "Di notte, a tempo" - 90 secondi
+  L_GD13_Livello3  "Di notte, a tempo" - 150 secondi
       timer, piattaforma laterale, portale (teletrasporto), gravità ridotta,
       sbarra che uccide, un wall run veloce, salti da doppio salto, torretta
       che anticipa il movimento, ascensore; bracieri con luce che tremola.
       Il traguardo riporta al livello 1 e azzera le morti.
+
+IN PIU' (livelli "gym"): faro e piattaforme che scalano con la distanza,
+jetpack, torcia in prima persona con la batteria (tunnel buio), 3 vite con
+ritorno all'ultimo posto sicuro, ponte presente il 35% delle volte, torretta
+i cui proiettili riavviano il livello, generatore di casse (3, poi 5 s),
+lava da 10 HP/s, actor che cambia modello ogni secondo.
+Vedi Docs/GD13_platformer.md.
 
 I pezzi di gioco sono classi C++ del progetto (Source/AIV_UE5Intro/Platformer).
 Questo script li piazza e ne imposta i parametri; dopo si possono spostare e
@@ -72,7 +79,7 @@ M = {}
 
 
 def _abilita(nome):
-    """Valore dell'enum EPlatformerAbility (DOUBLE_JUMP / WALL_RUN)."""
+    """Valore dell'enum EPlatformerAbility (DOUBLE_JUMP, WALL_RUN, JETPACK, CRATE_SPAWNER)."""
     enum = getattr(unreal, "PlatformerAbility", None)
     if enum is None:
         return None
@@ -88,6 +95,31 @@ def trappola_sotto(centro_x, lunghezza, larghezza=8000.0, z=-500.0):
     a.spawn_cpp("KillZone", "Trappola_Caduta", "Gioco/Trappole",
                 (centro_x, 0, z), zone_extent=a.vec(lunghezza / 2, larghezza / 2, 150),
                 show_visual=False, restart_delay=0.2)
+
+
+def caduta_sotto(centro_x, lunghezza, larghezza=8000.0, z=-500.0):
+    """Un grande volume invisibile sotto il livello: chi cade perde una vita
+    e torna all'ultimo posto sicuro (con zero vite si riparte dal livello 1)."""
+    a.spawn_cpp("FallZone", "Zona_Caduta", "Gioco/Trappole",
+                (centro_x, 0, z), zone_extent=a.vec(lunghezza / 2, larghezza / 2, 150), show_visual=False)
+
+
+def potenziamento(nome, abilita, x, y, z_sopra, testo, messaggio):
+    """Un potenziamento: un actor semplice che gira, con la scritta sopra."""
+    a.spawn_cpp("AbilityPickup", nome, "Gioco/Abilita", (x, y, z_sopra + 110),
+                ability=_abilita(abilita), material=M["Abilita"], glow_intensity=20.0,
+                glow_color=a.colore((0.3, 0.7, 1.0)), pickup_radius=80.0, label=testo, message=messaggio)
+    a.luce_spot("Luce_" + nome, (x, y, z_sopra + 700), -90.0, 0.0, intensita=300.0, rgb=(0.5, 0.75, 1.0),
+                raggio=1000.0, cono_esterno=22.0, cono_interno=12.0)
+
+
+def batteria(nome, x, y, z_sopra, secondi=15.0):
+    return a.spawn_cpp("BatteryPickup", nome, "Gioco/Batterie", (x, y, z_sopra + 90),
+                       battery_seconds=secondi, material=M["Moneta"], label="BATTERIA")
+
+
+def cartello(testo, x, y, z, dimensione=32, colore_testo=(1.0, 0.9, 0.5)):
+    a.scritta(testo, (x, y, z), yaw=180, dimensione=dimensione, colore_testo=colore_testo)
 
 
 def traguardo(x, y, z_sopra, prossimo, messaggio="Livello completato!", azzera=False):
@@ -167,14 +199,23 @@ def livello_1():
     a.post_process(auto_exposure_bias=0.3, bloom_intensity=0.5, vignette_intensity=0.25)
     a.rendi_giocabile((-500, 0, 120))
 
-    # acqua tutto intorno: chi cade, riparte
-    # (la trappola sta SOPRA l'acqua, che ha collisione: si "affoga" prima di toccarla)
-    a.blocco("Acqua", "Ambiente", (4000, 0, -310), (16000, 9000, 20), M["Acqua"])
-    trappola_sotto(4000, 16000, larghezza=9000.0, z=-200)
+    # acqua tutto intorno: chi cade perde una vita e torna all'ultimo posto sicuro
+    # (la zona sta SOPRA l'acqua, che ha collisione: si "affoga" prima di toccarla)
+    a.blocco("Acqua", "Ambiente", (4500, 0, -310), (17000, 9000, 20), M["Acqua"])
+    caduta_sotto(4500, 17000, larghezza=9000.0, z=-200)
 
     # --- isola di partenza ------------------------------------------------
     a.pedana("Isola_Partenza", "Percorso/Isola", 0, 0, 0, 1600, 1600, spessore=300, materiale=M["Erba"])
     a.scritta("LIVELLO 1\nsalta, raccogli, scopri", (-150, 0, 330), yaw=180, dimensione=55)
+    cartello("3 VITE: se cadi in acqua torni all'ultimo posto sicuro\n(a zero vite si ricomincia dal livello 1)",
+             -150, 0, 230, dimensione=26, colore_testo=(1.0, 0.55, 0.65))
+
+    # il faro: piu' ti allontani, piu' diventa grande (cosi' lo vedi sempre)
+    a.blocco("Faro_Palo", "Arredo", (-650, 650, 200), (30, 30, 400), M["LegnoScuro"])
+    a.spawn_cpp("ScaleByDistanceActor", "Faro_CresceConLaDistanza", "Gioco/Gym", (-650, 650, 450),
+                shape_mesh=a.carica(a.SFERA), material=M["Abilita"], base_size=a.vec(100, 100, 100),
+                min_scale=1.0, max_scale=7.0, near_distance=400.0, far_distance=9000.0, scale_height=True,
+                label="FARO: piu' sei lontano, piu' cresce")
     fila_monete("Moneta_Isola", -300, -300, 200, -300, 0, 3)
 
     # pozzanghera: il materiale fisico dell'acqua cambia il suono dei passi
@@ -265,9 +306,33 @@ def livello_1():
     a.scritta("se manchi il salto, risalta in aria\ne correggi la direzione", (6250, 0, 780), yaw=180,
               dimensione=32)
 
+    # --- GENERATORE DI CASSE: la parete di 4,6 m -----------------------------------
+    a.pedana("P11_Casse", "Percorso", 8300, 0, 510, 700, 600, tinta="salto")
+    potenziamento("Oggetto_Casse", "CRATE_SPAWNER", 8100, 0, 510, "GENERATORE DI CASSE",
+                  "Generatore di casse! Premi F: fino a 3 casse, poi 5 secondi di ricarica")
+    a.pedana("P12_ParetePiuAlta", "Percorso", 8900, 0, 970, 500, 600, spessore=760, tinta="percorso2")
+    cartello("parete di 4,6 m: nemmeno il doppio salto basta\nF davanti al muro: 2 casse una sull'altra, salici e salta due volte",
+             8300, 0, 760)
+
+    # --- PONTE FORTUNATO (c'e' solo il 35% delle volte) e la strada lunga -------------
+    a.spawn_cpp("RandomPresenceActor", "Ponte_Fortunato", "Gioco/Gym", (9625, 0, 970 - 15),
+                spawn_chance=0.35, size=a.vec(950, 250, 30), material=M["Moneta"],
+                label="PONTE FORTUNATO (35%)")
+    for i, (x, y, z) in enumerate(((9450, -450, 970), (9850, -450, 1000))):
+        a.pedana("Sasso_%d" % (i + 1), "Percorso/StradaLunga", x, y, z, 200, 200, tinta="percorso2")
+    cartello("il ponte c'e' solo 35 volte su 100\nse non c'e': i sassi a sinistra", 9150, 0, 1230)
+
+    # --- il totem che cambia modello ogni secondo ------------------------------------
+    a.pedana("P13", "Percorso", 10400, 0, 970, 600, 600)
+    a.spawn_cpp("ModelCyclerActor", "Totem_CambiaModello", "Gioco/Gym", (10450, 220, 970 + 70),
+                interval=1.0, size=a.vec(120, 120, 140), collide=True,
+                materials=[M["Salto"], M["Abilita"], M["Moneta"], M["Pericolo"]],
+                label="CAMBIA MODELLO OGNI SECONDO")
+    moneta("Moneta_P13", 10350, -150, 970, valore=2)
+
     # --- traguardo -------------------------------------------------------------
-    a.pedana("P11_Arrivo", "Percorso", 8250, 0, 510, 600, 600, tinta="traguardo")
-    traguardo(8300, 0, 510, LIV2, messaggio="Livello 1 completato! Le monete sono al sicuro")
+    a.pedana("P14_Arrivo", "Percorso", 11150, 0, 970, 600, 600, tinta="traguardo")
+    traguardo(11200, 0, 970, LIV2, messaggio="Livello 1 completato! Le monete sono al sicuro")
     a.salva()
     a.log("Livello 1 creato")
 
@@ -283,7 +348,7 @@ def livello_2():
     a.post_process(auto_exposure_bias=0.2, bloom_intensity=0.6, vignette_intensity=0.3)
     a.rendi_giocabile((-150, 0, 120))
     a.scritta("LIVELLO 2\nostacoli e congegni", (150, 0, 330), yaw=180, dimensione=55)
-    trappola_sotto(6500, 16000, z=-600)
+    caduta_sotto(9500, 25000, z=-600)
 
     a.pedana("P0_Partenza", "Percorso", 0, 0, 0, 800, 800)
 
@@ -346,8 +411,8 @@ def livello_2():
     # --- corridoio di lava (toglie vita) ---------------------------------------------
     a.pedana("P7_Lava", "Percorso", 9250, 0, 950, 1400, 600, tinta="percorso2")
     a.spawn_cpp("DamageZone", "Lava", "Gioco/Trappole", (9250, 0, 950 + 60),
-                zone_extent=a.vec(400, 300, 60), damage_per_hit=15.0, hit_interval=0.4,
-                label="LAVA! attraversa in fretta", visual_material=M["Lava"], visual_thickness=6.0)
+                zone_extent=a.vec(400, 300, 60), damage_per_hit=10.0, hit_interval=1.0,
+                label="LAVA: 10 HP al secondo, attraversa in fretta", visual_material=M["Lava"], visual_thickness=6.0)
     a.luce_punto("Luce_Lava", (9250, 0, 1080), intensita=120.0, rgb=(1.0, 0.35, 0.08), raggio=900.0,
                  ombre=False)
     for i, (x, y) in enumerate(((8780, 180), (8800, -200), (9720, 120), (9700, -170))):
@@ -380,8 +445,35 @@ def livello_2():
     a.collega(negozio, "targets", [ponte])
     a.scritta("ghiaccio gratis... o ponte sicuro a 5 monete", (11150, 0, 1250), yaw=180, dimensione=32)
 
-    a.pedana("P10_Arrivo", "Percorso", 13250, 0, 950, 800, 1000, tinta="traguardo")
-    traguardo(13300, 0, 950, LIV3, messaggio="Livello 2 completato! Ora di notte, a tempo")
+    # --- JETPACK: il salto lunghissimo verso una piattaforma piccola -----------------
+    a.pedana("P10_Jetpack", "Percorso", 13250, 0, 950, 800, 1000, tinta="salto")
+    potenziamento("Oggetto_Jetpack", "JETPACK", 13100, 0, 950, "JETPACK",
+                  "Jetpack! In aria TIENI PREMUTO salto: voli finche' c'e' carburante")
+    cartello("JETPACK: salta e TIENI PREMUTO salto\npilota fino alla piattaforma piccola", 13300, 0, 1250,
+             colore_testo=(1.0, 0.65, 0.3))
+    a.pedana("P11_Atterraggio", "Percorso", 14950, 0, 1100, 300, 300, tinta="salto")
+    moneta("Moneta_Atterraggio", 14950, 0, 1100, valore=2)
+
+    # --- piattaforme che si restringono mentre ti avvicini --------------------------
+    for i, (x, y) in enumerate(((15700, 0), (16400, 250), (17100, -150))):
+        a.spawn_cpp("ScaleByDistanceActor", "Si_Restringe_%d" % (i + 1), "Gioco/Gym", (x, y, 1100 - 15),
+                    material=M["Salto"], base_size=a.vec(400, 400, 30), min_scale=0.45, max_scale=1.0,
+                    near_distance=150.0, far_distance=900.0, scale_height=False,
+                    label="SI RESTRINGE QUANDO TI AVVICINI" if i == 0 else "")
+
+    # --- torretta con i proiettili che fanno RIPARTIRE il livello -------------------
+    a.pedana("P12_TiroMortale", "Percorso", 18300, 0, 1100, 1400, 700)
+    for i, (x, y) in enumerate(((17950, -120), (18400, 150), (18800, -120))):
+        a.blocco("Riparo_Mortale_%d" % (i + 1), "Percorso/Ripari", (x, y, 1200), (80, 300, 200), tinta="riparo")
+    a.pedana("Torretta_Mortale_Base", "Gioco/Torrette", 18300, 900, 1200, 250, 250, spessore=900, tinta="pericolo")
+    a.spawn_cpp("Turret", "Torretta_Mortale", "Gioco/Torrette", (18300, 900, 1200), yaw=-90, range=1600.0,
+                fire_interval=1.8, turn_speed=2.5, projectile_speed=1100.0, restart_level_on_hit=True,
+                body_material=M["Pericolo"], projectile_material=M["Proiettile"])
+    cartello("PROIETTILI MORTALI: se ti colpiscono il livello riparte\nvai da un riparo all'altro", 17700, 0, 1400,
+             colore_testo=(1.0, 0.35, 0.3))
+
+    a.pedana("P13_Arrivo", "Percorso", 19500, 0, 1100, 800, 800, tinta="traguardo")
+    traguardo(19550, 0, 1100, LIV3, messaggio="Livello 2 completato! Ora di notte, a tempo")
     a.salva()
     a.log("Livello 2 creato")
 
@@ -398,12 +490,12 @@ def livello_3():
     a.post_process(auto_exposure_bias=1.0, auto_exposure_min_brightness=0.4,
                    auto_exposure_max_brightness=1.5, bloom_intensity=0.9, vignette_intensity=0.45)
     a.rendi_giocabile((-150, 0, 120))
-    trappola_sotto(5000, 13000, z=-600)
+    caduta_sotto(9000, 24000, z=-600)
 
     # il timer: se scade, il livello riparte (lo mostra anche l'HUD)
     a.spawn_cpp("LevelTimer", "Timer", "Gioco", (300, 0, 450), yaw=180,
-                time_limit=90.0, warning_threshold=15.0, show_on_screen=False, show_in_world=True)
-    a.scritta("LIVELLO 3: 90 secondi", (300, 0, 300), yaw=180, dimensione=45)
+                time_limit=150.0, warning_threshold=20.0, show_on_screen=False, show_in_world=True)
+    a.scritta("LIVELLO 3: 150 secondi", (300, 0, 300), yaw=180, dimensione=45)
 
     a.pedana("P0_Partenza", "Percorso", 0, 0, 0, 600, 600)
     braciere("Braciere_0", 200, 230, 0)
@@ -457,11 +549,43 @@ def livello_3():
                 body_material=M["Torretta"], projectile_material=M["Proiettile"])
     braciere("Braciere_8", 9200, -230, 1000)
 
-    # ascensore e traguardo
+    # ascensore verso il tunnel
     piattaforma_mobile("Ascensore", 9550, 0, 1000, (0, 0, 500), tempo=2.0, pausa=1.0)
-    a.pedana("P9_Arrivo", "Percorso", 10000, 0, 1500, 500, 500, tinta="traguardo")
-    braciere("Braciere_9", 10150, 180, 1500, intensita=100.0)
-    traguardo(10000, 0, 1500, LIV1, messaggio="Hai finito tutti e tre i livelli!", azzera=True)
+
+    # --- IL TUNNEL BUIO: si passa solo con la torcia (prima persona) -----------------
+    tz = 1500
+    a.pedana("P9_Tunnel_Ingresso", "Percorso", 10000, 0, tz, 500, 500, tinta="percorso2")
+    braciere("Braciere_9", 9850, 200, tz, intensita=100.0)
+    batteria("Batteria_Ingresso", 10050, -150, tz)
+    cartello("TUNNEL BUIO\nrotellina del mouse AVANTI: prima persona e torcia\n(la batteria dura poco: le batterie la ricaricano)",
+             10000, 0, tz + 330, dimensione=28, colore_testo=(1.0, 0.95, 0.5))
+    buio = M["PercorsoScuro"]
+    a.blocco("Tunnel_Tetto", "Percorso/Tunnel", (11400, 0, tz + 440), (2200, 840, 40), buio)
+    a.blocco("Tunnel_Parete_S", "Percorso/Tunnel", (11400, -420, tz + 70), (2200, 40, 780), buio)
+    a.blocco("Tunnel_Parete_N", "Percorso/Tunnel", (11400, 420, tz + 70), (2200, 40, 780), buio)
+    for i, x in enumerate((10500, 10950, 11400, 11850, 12300)):
+        a.pedana("Tunnel_P%d" % (i + 1), "Percorso/Tunnel", x, (-120 if i % 2 else 120), tz, 260, 260, tinta="percorso2")
+    batteria("Batteria_Tunnel", 11400, 120, tz)
+    moneta("Moneta_Tunnel", 11850, -120, tz, valore=3)
+
+    # --- la piattaforma che cambia modello ogni secondo ----------------------------------
+    a.pedana("P10_DopoTunnel", "Percorso", 12900, 0, tz, 500, 500)
+    braciere("Braciere_10", 12800, 200, tz)
+    a.spawn_cpp("ModelCyclerActor", "Piattaforma_CambiaForma", "Gioco/Gym", (13550, 0, tz - 100),
+                interval=1.0, size=a.vec(250, 250, 200), collide=True,
+                materials=[M["Salto"], M["Abilita"], M["Pericolo"], M["Moneta"]],
+                label="CAMBIA FORMA OGNI SECONDO: salta quando e' un cubo")
+    a.pedana("P11_Combo", "Percorso", 14200, 0, tz, 500, 500)
+
+    # --- COMBO FINALE: wall run -> jetpack -> casse + doppio salto --------------------------
+    muro_wallrun("Muro_Combo", 14550, 15450, 300, +1, tz - 200, tz + 500)
+    cartello("COMBO: wall run, poi jetpack fino alla piattaforma,\npoi casse e doppio salto", 14200, 0, tz + 300,
+             colore_testo=(0.5, 0.8, 1.0))
+    a.pedana("P12_Casse", "Percorso", 16700, 0, tz + 100, 600, 600, tinta="salto")
+    braciere("Braciere_12", 16550, -230, tz + 100)
+    a.pedana("P13_Arrivo", "Percorso", 17250, 0, tz + 560, 500, 600, spessore=900, tinta="traguardo")
+    braciere("Braciere_13", 17350, 220, tz + 560, intensita=100.0)
+    traguardo(17300, 0, tz + 560, LIV1, messaggio="Hai finito tutti e tre i livelli!", azzera=True)
     a.salva()
     a.log("Livello 3 creato")
 

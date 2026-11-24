@@ -1,11 +1,36 @@
 #include "PlatformerGameMode.h"
 
 #include "PlatformerAbilitiesComponent.h"
+#include "PlatformerCrateSpawnerComponent.h"
+#include "PlatformerJetpackComponent.h"
+#include "PlatformerSafeSpotComponent.h"
+#include "PlatformerTorchComponent.h"
 #include "PlatformerHealthComponent.h"
 #include "PlatformerHUD.h"
 #include "PlatformerRunSubsystem.h"
 #include "GameFramework/Pawn.h"
 #include "UObject/ConstructorHelpers.h"
+
+namespace
+{
+	/** Aggiunge al pawn un componente di quella classe, se non lo ha già (Add Component a runtime). */
+	template <typename T>
+	T* AddComponentIfMissing(AActor* Actor, const TCHAR* Name)
+	{
+		if (!Actor)
+		{
+			return nullptr;
+		}
+		if (T* Existing = Actor->FindComponentByClass<T>())
+		{
+			return Existing;
+		}
+		T* NewComp = NewObject<T>(Actor, Name);
+		Actor->AddInstanceComponent(NewComp);
+		NewComp->RegisterComponent();
+		return NewComp;
+	}
+}
 
 APlatformerGameMode::APlatformerGameMode()
 {
@@ -36,8 +61,19 @@ void APlatformerGameMode::SetPlayerDefaults(APawn* PlayerPawn)
 	UPlatformerHealthComponent::FindOrAdd(PlayerPawn);
 	if (UPlatformerAbilitiesComponent* Abilities = UPlatformerAbilitiesComponent::FindOrAdd(PlayerPawn))
 	{
-		Abilities->bDoubleJumpAlwaysUnlocked |= bDoubleJumpForTesting;
+		Abilities->bDoubleJumpAlwaysUnlocked |= bDoubleJumpForTesting || bAllAbilitiesForTesting;
 	}
+	// le abilità nuove: ognuna è un componente a sé (si possono rifare una per una in Blueprint)
+	if (UPlatformerJetpackComponent* Jetpack = AddComponentIfMissing<UPlatformerJetpackComponent>(PlayerPawn, TEXT("PlatformerJetpack")))
+	{
+		Jetpack->bAlwaysUnlocked |= bAllAbilitiesForTesting;
+	}
+	if (UPlatformerCrateSpawnerComponent* Crates = AddComponentIfMissing<UPlatformerCrateSpawnerComponent>(PlayerPawn, TEXT("PlatformerCrates")))
+	{
+		Crates->bAlwaysUnlocked |= bAllAbilitiesForTesting;
+	}
+	AddComponentIfMissing<UPlatformerTorchComponent>(PlayerPawn, TEXT("PlatformerTorch"));
+	AddComponentIfMissing<UPlatformerSafeSpotComponent>(PlayerPawn, TEXT("PlatformerSafeSpot"));
 }
 
 void APlatformerGameMode::AIVResetProgress()
@@ -54,6 +90,8 @@ void APlatformerGameMode::AIVUnlockAll()
 	{
 		Run->UnlockAbility(EPlatformerAbility::DoubleJump);
 		Run->UnlockAbility(EPlatformerAbility::WallRun);
+		Run->UnlockAbility(EPlatformerAbility::Jetpack);
+		Run->UnlockAbility(EPlatformerAbility::CrateSpawner);
 		Run->PushMessage(TEXT("Tutte le abilità sbloccate"), FLinearColor(0.4f, 0.8f, 1.f));
 	}
 }

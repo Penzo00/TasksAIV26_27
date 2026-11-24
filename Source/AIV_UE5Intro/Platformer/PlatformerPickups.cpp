@@ -1,6 +1,8 @@
 #include "PlatformerPickups.h"
 
 #include "PlatformerHealthComponent.h"
+#include "PlatformerRunSubsystem.h"
+#include "PlatformerTorchComponent.h"
 #include "Components/PointLightComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -201,5 +203,38 @@ bool AHealthPickup::Collect(ACharacter* Character)
 	}
 	// Un "danno negativo" cura anche la barra della vita di BP_Bot2 (Event AnyDamage).
 	UGameplayStatics::ApplyDamage(Character, -HealAmount, nullptr, this, UDamageType::StaticClass());
+	return true;
+}
+
+// ---------------------------------------------------------------------
+// ABatteryPickup
+// ---------------------------------------------------------------------
+
+ABatteryPickup::ABatteryPickup()
+{
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> CylinderMesh(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
+	if (CylinderMesh.Succeeded())
+	{
+		Mesh->SetStaticMesh(CylinderMesh.Object);
+	}
+	Mesh->SetRelativeScale3D(FVector(0.25f, 0.25f, 0.45f));
+	GlowColor = FLinearColor(1.f, 0.95f, 0.4f);
+	GlowIntensity = 12.f;
+	Label = FText::FromString(TEXT("BATTERIA"));
+}
+
+bool ABatteryPickup::Collect(ACharacter* Character)
+{
+	UPlatformerTorchComponent* Torch = Character ? Character->FindComponentByClass<UPlatformerTorchComponent>() : nullptr;
+	if (!Torch)
+	{
+		return false;
+	}
+	Torch->AddBattery(BatterySeconds);
+	if (UPlatformerRunSubsystem* Run = UPlatformerRunSubsystem::Get(this))
+	{
+		Run->PushMessage(FString::Printf(TEXT("Torcia ricaricata: %d%%"), FMath::RoundToInt(Torch->GetBatteryPercent() * 100.f)),
+			FLinearColor(1.f, 0.95f, 0.4f));
+	}
 	return true;
 }

@@ -1,5 +1,7 @@
 #include "PlatformerZones.h"
 
+#include "PlatformerSafeSpotComponent.h"
+
 #include "LevelTimer.h"
 #include "EngineUtils.h"
 #include "PlatformerHealthComponent.h"
@@ -22,6 +24,22 @@ void AKillZone::OnCharacterEntered(ACharacter* Character)
 	if (UPlatformerRunSubsystem* Run = UPlatformerRunSubsystem::Get(this))
 	{
 		Run->KillPlayerAndRestart(RestartDelay);
+	}
+}
+
+// ---------------------------------------------------------------------
+// AFallZone
+// ---------------------------------------------------------------------
+
+void AFallZone::OnCharacterEntered(ACharacter* Character)
+{
+	if (UPlatformerSafeSpotComponent* Safe = Character ? Character->FindComponentByClass<UPlatformerSafeSpotComponent>() : nullptr)
+	{
+		Safe->HandleFall();
+	}
+	else if (UPlatformerRunSubsystem* Run = UPlatformerRunSubsystem::Get(this))
+	{
+		Run->KillPlayerAndRestart(0.2f);   // senza il componente: come una trappola
 	}
 }
 
