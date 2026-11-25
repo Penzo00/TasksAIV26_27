@@ -5,14 +5,48 @@
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
+#include "Misc/PackageName.h"
+#include "UObject/Package.h"
 #include "TimerManager.h"
+#include "UObject/UObjectGlobals.h"
 
 const FString UPlatformerRunSubsystem::SaveSlotName = TEXT("AIV_Platformer");
+const FString UPlatformerRunSubsystem::SaveSlotNameBP = TEXT("AIV_Platformer_BP");
+const FName UPlatformerRunSubsystem::DefaultFirstLevelCpp = FName(TEXT("L_GD13_Livello1"));
+const FName UPlatformerRunSubsystem::DefaultFirstLevelBP = FName(TEXT("L_GD13_Livello1_BP"));
+
+namespace
+{
+	/** I livelli Blueprint si riconoscono dal nome: finiscono con _BP. */
+	bool IsBlueprintLevelName(const FString& LevelName)
+	{
+		return LevelName.EndsWith(TEXT("_BP"), ESearchCase::IgnoreCase);
+	}
+
+	/** Il livello esiste davvero fra gli asset? LastLevel è un percorso completo, "/Game/Maps/L_Nome". */
+	bool LevelExists(FName LevelPath)
+	{
+		const FString Path = LevelPath.ToString();
+		return !LevelPath.IsNone() && Path.StartsWith(TEXT("/")) && FPackageName::DoesPackageExist(Path);
+	}
+}
 
 void UPlatformerRunSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
 	LoadOrCreateSave();
+	PostLoadMapHandle = FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &UPlatformerRunSubsystem::OnPostLoadMap);
+}
+
+void UPlatformerRunSubsystem::Deinitialize()
+{
+	FCoreUObjectDelegates::PostLoadMapWithWorld.Remove(PostLoadMapHandle);
+	Super::Deinitialize();
+}
+
+FString UPlatformerRunSubsystem::GetSlotNameForMode(bool bBlueprints)
+{
+	return bBlueprints ? SaveSlotNameBP : SaveSlotName;
 }
 
 UPlatformerRunSubsystem* UPlatformerRunSubsystem::Get(const UObject* WorldContext)
@@ -39,20 +73,29 @@ FName UPlatformerRunSubsystem::AbilityToName(EPlatformerAbility Ability)
 }
 
 // ---------------------------------------------------------------------
-// Salvataggio (GD16): all'avvio controlla, carica o crea
+// Salvataggio (GD16): all'avvio controlla, carica o crea.
+// Uno slot per modalità: AIV_Platformer (C++) e AIV_Platformer_BP (Blueprints).
 // ---------------------------------------------------------------------
 
 void UPlatformerRunSubsystem::LoadOrCreateSave()
 {
-	if (UGameplayStatics::DoesSaveGameExist(SaveSlotName, 0))
+	const FString Slot = GetSlotNameForMode(bBlueprintMode);
+	Save = nullptr;
+	if (UGameplayStatics::DoesSaveGameExist(Slot, 0))
 	{
-		Save = Cast<UPlatformerSaveGame>(UGameplayStatics::LoadGameFromSlot(SaveSlotName, 0));
+		Save = Cast<UPlatformerSaveGame>(UGameplayStatics::LoadGameFromSlot(Slot, 0));
 	}
 	if (!Save)
 	{
 		Save = Cast<UPlatformerSaveGame>(UGameplayStatics::CreateSaveGameObject(UPlatformerSaveGame::StaticClass()));
 	}
+	if (Save)
+	{
+		Save->bBlueprintMode = bBlueprintMode;
+	}
 	BankedCoins = Save ? Save->Coins : 0;
+	PendingCoins = 0;
+	OnCoinsChanged.Broadcast(GetVisibleCoins());
 }
 
 void UPlatformerRunSubsystem::SaveProgress()
@@ -62,13 +105,50 @@ void UPlatformerRunSubsystem::SaveProgress()
 		return;
 	}
 	Save->Coins = BankedCoins;
-	UGameplayStatics::SaveGameToSlot(Save, SaveSlotName, 0);
+	Save->bBlueprintMode = bBlueprintMode;
+	UGameplayStatics::SaveGameToSlot(Save, GetSlotNameForMode(bBlueprintMode), 0);
+}
+
+bool UPlatformerRunSubsystem::HasSaveForMode(bool bBlueprints) const
+{
+	return UGameplayStatics::DoesSaveGameExist(GetSlotNameForMode(bBlueprints), 0);
+}
+
+bool UPlatformerRunSubsystem::GetSaveSummary(bool bBlueprints, FName& OutLastLevel, int32& OutCoins,
+	TArray<FName>& OutAbilities) const
+{
+	OutLastLevel = NAME_None;
+	OutCoins = 0;
+	OutAbilities.Reset();
+
+	// La modalità in corso è già in memoria (ed è più aggiornata del file).
+	const UPlatformerSaveGame* Data = nullptr;
+	if (bBlueprints == bBlueprintMode && Save && HasSaveForMode(bBlueprints))
+	{
+		Data = Save;
+	}
+	else if (HasSaveForMode(bBlueprints))
+	{
+		Data = Cast<UPlatformerSaveGame>(UGameplayStatics::LoadGameFromSlot(GetSlotNameForMode(bBlueprints), 0));
+	}
+	if (!Data)
+	{
+		return false;
+	}
+	OutLastLevel = Data->LastLevel;
+	OutCoins = (Data == Save) ? BankedCoins : Data->Coins;
+	OutAbilities = Data->UnlockedAbilities;
+	return true;
 }
 
 void UPlatformerRunSubsystem::ResetProgress()
 {
-	UGameplayStatics::DeleteGameInSlot(SaveSlotName, 0);
+	UGameplayStatics::DeleteGameInSlot(GetSlotNameForMode(bBlueprintMode), 0);
 	Save = Cast<UPlatformerSaveGame>(UGameplayStatics::CreateSaveGameObject(UPlatformerSaveGame::StaticClass()));
+	if (Save)
+	{
+		Save->bBlueprintMode = bBlueprintMode;
+	}
 	BankedCoins = 0;
 	PendingCoins = 0;
 	DeathCount = 0;
@@ -222,16 +302,108 @@ void UPlatformerRunSubsystem::OpenFirstLevel()
 	GoToLevel(FirstLevel);
 }
 
-void UPlatformerRunSubsystem::StartMode(bool bBlueprints, FName FirstLevelOfMode)
+// ---------------------------------------------------------------------
+// Menu: modalità, Nuova partita, Continua
+// ---------------------------------------------------------------------
+
+void UPlatformerRunSubsystem::SwitchMode(bool bBlueprints, FName FirstLevelOfMode)
 {
-	bBlueprintMode = bBlueprints;
 	if (!FirstLevelOfMode.IsNone())
 	{
 		FirstLevel = FirstLevelOfMode;   // il game over riporta al primo livello DELLA MODALITÀ scelta
 	}
+	else
+	{
+		FirstLevel = bBlueprints ? DefaultFirstLevelBP : DefaultFirstLevelCpp;
+	}
+	if (bBlueprints != bBlueprintMode || !Save)
+	{
+		SaveProgress();                  // non perdere niente della modalità che si lascia
+		bBlueprintMode = bBlueprints;
+		LoadOrCreateSave();
+	}
+}
+
+void UPlatformerRunSubsystem::StartMode(bool bBlueprints, FName FirstLevelOfMode)
+{
+	ContinueGame(bBlueprints, FirstLevelOfMode);
+}
+
+void UPlatformerRunSubsystem::NewGame(bool bBlueprints, FName FirstLevelOfMode)
+{
+	SwitchMode(bBlueprints, FirstLevelOfMode);
+
+	// Salvataggio nuovo: niente abilità, niente monete. Si tengono solo i record
+	// di tempo e le morti totali, che sono statistiche e non potenziamenti.
+	UPlatformerSaveGame* Fresh = Cast<UPlatformerSaveGame>(
+		UGameplayStatics::CreateSaveGameObject(UPlatformerSaveGame::StaticClass()));
+	if (Fresh && Save)
+	{
+		Fresh->BestTimes = Save->BestTimes;
+		Fresh->TotalDeaths = Save->TotalDeaths;
+	}
+	Save = Fresh;
+	if (Save)
+	{
+		Save->LastLevel = FirstLevel;
+	}
+	BankedCoins = 0;
 	PendingCoins = 0;
 	DeathCount = 0;
+	SaveProgress();                      // da qui "Continua" riparte da questa partita nuova
+	OnCoinsChanged.Broadcast(GetVisibleCoins());
 	GoToLevel(FirstLevel);
+}
+
+void UPlatformerRunSubsystem::ContinueGame(bool bBlueprints, FName FirstLevelOfMode)
+{
+	SwitchMode(bBlueprints, FirstLevelOfMode);   // carica lo slot della modalità (se è un'altra)
+	PendingCoins = 0;
+	DeathCount = 0;
+
+	FName Target = FirstLevel;
+	if (Save && LevelExists(Save->LastLevel)
+		&& FName(*FPackageName::GetShortName(Save->LastLevel.ToString())) != MenuLevel)
+	{
+		Target = Save->LastLevel;
+	}
+	GoToLevel(Target);
+}
+
+void UPlatformerRunSubsystem::OnPostLoadMap(UWorld* LoadedWorld)
+{
+	if (LoadedWorld && LoadedWorld->IsGameWorld() && LoadedWorld->GetGameInstance() == GetGameInstance())
+	{
+		RecordLevelReached(LoadedWorld);
+	}
+}
+
+void UPlatformerRunSubsystem::RecordLevelReached(UWorld* World)
+{
+	if (!World)
+	{
+		return;
+	}
+	// percorso completo del livello, senza il prefisso che l'editor aggiunge in Play (UEDPIE_0_)
+	const FString LevelPath = UWorld::RemovePIEPrefix(World->GetPackage()->GetName());
+	const FString LevelString = FPackageName::GetShortName(LevelPath);
+	const FName Level(*LevelPath);
+	if (LevelString.IsEmpty() || FName(*LevelString) == MenuLevel)
+	{
+		return;
+	}
+	// Un livello _BP aperto senza passare dal menu (Play direttamente nell'editor):
+	// si usa comunque lo slot giusto.
+	const bool bLevelIsBP = IsBlueprintLevelName(LevelString);
+	if (bLevelIsBP != bBlueprintMode)
+	{
+		SwitchMode(bLevelIsBP, NAME_None);
+	}
+	if (Save && Save->LastLevel != Level)
+	{
+		Save->LastLevel = Level;
+		SaveProgress();
+	}
 }
 
 void UPlatformerRunSubsystem::GoToMenu()
@@ -305,6 +477,30 @@ void UPlatformerRunSubsystem::UnlockAbility(EPlatformerAbility Ability)
 	Save->UnlockedAbilities.Add(AbilityToName(Ability));
 	SaveProgress();
 	OnAbilityUnlocked.Broadcast(Ability);
+}
+
+bool UPlatformerRunSubsystem::HasAbilityByName(FName AbilityName) const
+{
+	return Save && !AbilityName.IsNone() && Save->UnlockedAbilities.Contains(AbilityName);
+}
+
+void UPlatformerRunSubsystem::UnlockAbilityByName(FName AbilityName)
+{
+	if (!Save || AbilityName.IsNone() || HasAbilityByName(AbilityName))
+	{
+		return;
+	}
+	Save->UnlockedAbilities.Add(AbilityName);
+	SaveProgress();
+	// se il nome è una delle abilità C++, avvisa anche chi ascolta l'evento
+	for (EPlatformerAbility A : { EPlatformerAbility::DoubleJump, EPlatformerAbility::WallRun,
+		EPlatformerAbility::Jetpack, EPlatformerAbility::CrateSpawner })
+	{
+		if (AbilityToName(A) == AbilityName)
+		{
+			OnAbilityUnlocked.Broadcast(A);
+		}
+	}
 }
 
 void UPlatformerRunSubsystem::PushMessage(const FString& Message, FLinearColor Color)

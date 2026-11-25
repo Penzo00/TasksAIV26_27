@@ -33,6 +33,7 @@ class AIV_UE5INTRO_API UPlatformerRunSubsystem : public UGameInstanceSubsystem
 
 public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+	virtual void Deinitialize() override;
 
 	/** Comodità: trova il sottosistema partendo da qualunque oggetto nel mondo. */
 	static UPlatformerRunSubsystem* Get(const UObject* WorldContext);
@@ -109,9 +110,40 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Platformer|Menu")
 	bool IsBlueprintMode() const { return bBlueprintMode; }
 
-	/** Chiamato dal menu: ricorda la modalità, imposta il primo livello e lo apre. */
+	/** Vecchio ingresso del menu: ora equivale a ContinueGame (tiene i potenziamenti). */
 	UFUNCTION(BlueprintCallable, Category = "Platformer|Menu")
 	void StartMode(bool bBlueprints, FName FirstLevelOfMode);
+
+	/**
+	 * "Nuova partita": riparte dal primo livello della modalità SENZA potenziamenti.
+	 * Il salvataggio della modalità viene riscritto: abilità e monete a zero,
+	 * restano solo i record di tempo e il conteggio delle morti totali.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Platformer|Menu")
+	void NewGame(bool bBlueprints, FName FirstLevelOfMode);
+
+	/**
+	 * "Continua": carica il salvataggio della modalità e riparte dall'ultimo livello
+	 * raggiunto con potenziamenti e monete salvate. Senza salvataggio (o se quel
+	 * livello non esiste più) parte dal primo livello.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Platformer|Menu")
+	void ContinueGame(bool bBlueprints, FName FirstLevelOfMode);
+
+	/** Esiste un salvataggio per questa modalità? (Il menu lo usa per attivare "Continua".) */
+	UFUNCTION(BlueprintPure, Category = "Platformer|Salvataggio")
+	bool HasSaveForMode(bool bBlueprints) const;
+
+	/**
+	 * Legge dal disco il riassunto del salvataggio di una modalità, senza cambiare la partita in corso.
+	 * Falso se non c'è un salvataggio.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Platformer|Salvataggio")
+	bool GetSaveSummary(bool bBlueprints, FName& OutLastLevel, int32& OutCoins, TArray<FName>& OutAbilities) const;
+
+	/** Nome dello slot usato da una modalità. */
+	UFUNCTION(BlueprintPure, Category = "Platformer|Salvataggio")
+	static FString GetSlotNameForMode(bool bBlueprints);
 
 	/** Torna al menu di scelta della modalità (tasto M nei livelli C++). */
 	UFUNCTION(BlueprintCallable, Category = "Platformer|Menu")
@@ -143,6 +175,17 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Platformer|Abilita")
 	void UnlockAbility(EPlatformerAbility Ability);
 
+	/**
+	 * Come HasAbility, ma con un nome libero: serve ai Blueprint che hanno un loro
+	 * enum (per esempio E_Ability -> To String -> To Name). Il salvataggio resta in C++.
+	 */
+	UFUNCTION(BlueprintPure, Category = "Platformer|Abilita")
+	bool HasAbilityByName(FName AbilityName) const;
+
+	/** Come UnlockAbility, ma con un nome libero (vedi HasAbilityByName). Salva subito. */
+	UFUNCTION(BlueprintCallable, Category = "Platformer|Abilita")
+	void UnlockAbilityByName(FName AbilityName);
+
 	// ---------------------------------------------------------------- salvataggio
 
 	UFUNCTION(BlueprintCallable, Category = "Platformer|Salvataggio")
@@ -165,13 +208,33 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Platformer")
 	FOnPlatformerMessage OnMessage;
 
-	/** Nome dello slot di salvataggio. */
+	/** Nome dello slot di salvataggio della modalità C++ (Bot2). */
 	static const FString SaveSlotName;
+
+	/** Nome dello slot di salvataggio della modalità Blueprints (BP_Hero). */
+	static const FString SaveSlotNameBP;
+
+	/** Primo livello di ogni modalità, se nessuno lo ha indicato (menu o livello aperto direttamente). */
+	static const FName DefaultFirstLevelCpp;
+	static const FName DefaultFirstLevelBP;
 
 	static FName AbilityToName(EPlatformerAbility Ability);
 
 private:
+	/** Carica (o crea in memoria) il salvataggio della modalità corrente. */
 	void LoadOrCreateSave();
+
+	/** Passa a un'altra modalità: cambia slot e ricarica, solo se serve. */
+	void SwitchMode(bool bBlueprints, FName FirstLevelOfMode);
+
+	/** A ogni livello aperto (Open Level) ricorda dove si è arrivati, con qualunque GameMode. */
+	void OnPostLoadMap(UWorld* LoadedWorld);
+
+	/** Segna il livello come "ultimo raggiunto" nel salvataggio (il menu non conta). */
+	void RecordLevelReached(UWorld* World);
+
+	FDelegateHandle PostLoadMapHandle;
+
 	FName CurrentLevelKey() const;
 
 	UPROPERTY()

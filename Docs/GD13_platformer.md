@@ -140,3 +140,41 @@ si sceglie se giocare i livelli C++ o la loro copia in Blueprint (`L_GD13_Livell
 riporta al menu. Come costruire i livelli Blueprint da zero: `Docs/Blueprint_Livelli/`
 (PDF e sorgenti LaTeX). Per far partire il gioco dal menu: Project Settings > Maps & Modes >
 Game Default Map = `L_GD13_Menu`.
+
+### Nuova partita o Continua (il salvataggio resta in C++)
+
+Dopo aver scelto la modalità, il menu mostra un secondo passo con due pulsanti, ognuno con
+il testo che spiega cosa fa:
+
+| Pulsante | Cosa succede |
+|---|---|
+| **Nuova partita** (1 / N) | Si parte dal livello 1 della modalità **senza potenziamenti** e con zero monete. Il salvataggio della modalità viene riscritto; restano solo i record di tempo e le morti totali. |
+| **Continua** (2 / C) | Si riparte dall'**ultimo livello raggiunto** con potenziamenti e monete salvate. Il pulsante mostra il livello, le abilità e le monete. È spento se la modalità non ha ancora un salvataggio. |
+
+Esc, Backspace o il tasto B del pad tornano alla scelta della modalità.
+
+Il salvataggio lo gestisce sempre il C++ (`UPlatformerRunSubsystem` + `UPlatformerSaveGame`),
+con **uno slot per modalità**: `AIV_Platformer` per C++/Bot2 e `AIV_Platformer_BP` per
+Blueprints/BP_Hero. Le due partite non si mescolano. L'ultimo livello raggiunto viene
+registrato da solo a ogni Open Level, con qualunque GameMode e qualunque personaggio: non serve
+nessun nodo. Un livello con `_BP` in fondo al nome usa automaticamente lo slot Blueprint, anche
+se lo si apre con Play direttamente dall'editor.
+
+**Cosa usare da BP_Hero / GI_Platform**: niente Save Game Blueprint. Si prende il sottosistema
+e si chiamano le sue funzioni:
+
+`Get Game Instance` → `Get Subsystem (PlatformerRunSubsystem)` → …
+
+| Serve a | Nodo |
+|---|---|
+| Ho già l'abilità? | `Has Ability` (enum `EPlatformerAbility`), oppure `Has Ability By Name` con un nome libero (per esempio `E_Ability` → `To String` → `To Name`). |
+| Sblocca un'abilità e salva | `Unlock Ability` / `Unlock Ability By Name` |
+| Moneta raccolta | `Add Pending Coins` (diventa "tua" al traguardo) |
+| Traguardo | `Complete Level`, poi `Go To Level` (oppure `Go To Menu`) |
+| Caduta / morte | `Lose Life` (falso = game over già avviato), `Game Over` |
+| Salvare a mano | `Save Progress` |
+| Da un menu fatto in UMG | `New Game` / `Continue Game` (modalità + primo livello), `Has Save For Mode`, `Get Save Summary` |
+
+Se un Blueprint aveva già un suo salvataggio (Create Save Game Object / Save Game to Slot),
+va tolto: altrimenti "Nuova partita" azzera lo slot C++ ma il personaggio ricarica i
+potenziamenti dal suo slot.
