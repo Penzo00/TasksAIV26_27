@@ -213,3 +213,4 @@ Content/Textures/T_Quartz_01_Diffuse_8192.uasset filter=lfs diff=lfs merge=lfs -
 *.uptnl filter=lfs diff=lfs merge=lfs -text
 /Plugin/Marketplace/BlockoutToolsPlugin/Binaries/Win64/UnrealEditor-BlockoutToolsEditorPlugin.pdb filter=lfs diff=lfs merge=lfs -text
 /Plugin/Marketplace/BlockoutToolsPlugin/Binaries/Win64/UnrealEditor-BlockoutToolsPlugin.pdb filter=lfs diff=lfs merge=lfs -text
+/Content/OST/GULHAM.wav filter=lfs diff=lfs merge=lfs -text
